@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+mobile/node_modules/
+
+# Environment variables
+.env
+backend/.env
+*.env.local
+
+# Expo & Mobile builds
+.expo/
+mobile/.expo/
+dist/
+mobile/dist/
+web-build/
+
+# Logs & temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+uploads/
+backend/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
