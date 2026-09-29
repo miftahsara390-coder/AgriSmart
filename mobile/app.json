@@ -41,12 +41,11 @@
         {
           "cameraPermission": "AgriSmart nécessite l'accès à la caméra pour scanner les plantes et analyser leur état."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
     }
   }
 }
-
-

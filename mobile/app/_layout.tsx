@@ -16,7 +16,7 @@ export default function RootLayout() {
       if (isAuthenticated) {
         router.replace('/(app)/home');
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/(auth)/welcome');
       }
     }
   }, [isLoading, isAuthenticated]);

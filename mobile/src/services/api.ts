@@ -1,11 +1,15 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-const API_URL = 'http://localhost:5000/api';
+// On Android emulator, localhost = the emulator itself, not the host machine.
+// Use 10.0.2.2 to reach the host machine from an Android emulator.
+const BASE_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+const API_URL = `http://${BASE_HOST}:5000/api`;
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 8000, // 8s — fail fast so the app doesn't hang
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -18,34 +22,14 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// ─── Response interceptor — handle 401 & refresh token ──────────────────────
+// ─── Response interceptor — handle 401 ───────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const original = error.config;
-
-    if (error.response?.status === 401 && !original._retry) {
-      original._retry = true;
-
-      try {
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-        const { accessToken, refreshToken: newRefresh } = res.data;
-
-        await SecureStore.setItemAsync('accessToken', accessToken);
-        await SecureStore.setItemAsync('refreshToken', newRefresh);
-
-        original.headers.Authorization = `Bearer ${accessToken}`;
-        return api(original);
-      } catch {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
-        // Redirect to login handled by Zustand auth store
-      }
+    if (error.response?.status === 401) {
+      // Token expired — clean up local storage
+      await SecureStore.deleteItemAsync('accessToken');
     }
-
     return Promise.reject(error);
   }
 );
@@ -56,8 +40,6 @@ export const authAPI = {
     api.post('/auth/register', data),
   login: (data: { email: string; password: string }) =>
     api.post('/auth/login', data),
-  logout: (refreshToken: string) =>
-    api.post('/auth/logout', { refreshToken }),
   me: () => api.get('/auth/me'),
 };
 
@@ -96,11 +78,8 @@ export const scanAPI = {
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
 export const agentAPI = {
-  chat: (message: string, conversationId?: string) =>
-    api.post('/agent/chat', { message, conversationId }),
-  getConversations: () => api.get('/agent/conversations'),
+  chat: (message: string, history?: Array<{ role: string; content: string }>) =>
+    api.post('/agent/chat', { message, history: history ?? [] }),
 };
 
 export default api;
-
-

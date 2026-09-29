@@ -10,7 +10,7 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -19,9 +19,9 @@ interface AuthState {
   loadUser: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  accessToken: null,
+  token: null,
   isAuthenticated: false,
   isLoading: true,
 
@@ -29,11 +29,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const token = await SecureStore.getItemAsync('accessToken');
       if (token) {
+        // Try to verify token by fetching current user
         const res = await authAPI.me();
-        set({ user: res.data.user, accessToken: token, isAuthenticated: true });
+        set({ user: res.data.user, token, isAuthenticated: true });
       }
     } catch {
-      set({ user: null, accessToken: null, isAuthenticated: false });
+      // Token invalid or backend unreachable — clear & continue as guest
+      await SecureStore.deleteItemAsync('accessToken');
+      set({ user: null, token: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
     }
@@ -41,33 +44,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (email, password) => {
     const res = await authAPI.login({ email, password });
-    const { user, accessToken, refreshToken } = res.data;
+    const { user, token } = res.data;
 
-    await SecureStore.setItemAsync('accessToken', accessToken);
-    await SecureStore.setItemAsync('refreshToken', refreshToken);
-
-    set({ user, accessToken, isAuthenticated: true });
+    await SecureStore.setItemAsync('accessToken', token);
+    set({ user, token, isAuthenticated: true });
   },
 
   register: async (name, email, password) => {
     const res = await authAPI.register({ name, email, password });
-    const { user, accessToken, refreshToken } = res.data;
+    const { user, token } = res.data;
 
-    await SecureStore.setItemAsync('accessToken', accessToken);
-    await SecureStore.setItemAsync('refreshToken', refreshToken);
-
-    set({ user, accessToken, isAuthenticated: true });
+    await SecureStore.setItemAsync('accessToken', token);
+    set({ user, token, isAuthenticated: true });
   },
 
   logout: async () => {
-    const refreshToken = await SecureStore.getItemAsync('refreshToken');
-    if (refreshToken) {
-      try { await authAPI.logout(refreshToken); } catch {}
-    }
     await SecureStore.deleteItemAsync('accessToken');
-    await SecureStore.deleteItemAsync('refreshToken');
-    set({ user: null, accessToken: null, isAuthenticated: false });
+    set({ user: null, token: null, isAuthenticated: false });
   },
 }));
-
-
