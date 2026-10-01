@@ -5,6 +5,9 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { scanAPI } from '../../src/services/api';
+import { COLORS } from '../../src/constants/theme';
+import Header from '../../src/components/Header';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ScanScreen() {
   const [image, setImage] = useState<string | null>(null);
@@ -58,11 +61,13 @@ export default function ScanScreen() {
       setLoading(false);
     }
   };
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>📷 Scan Plant</Text>
-      <Text style={styles.subtitle}>Detect diseases and get agricultural advice</Text>
+    <View style={styles.root}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <Header title="Scan Plant" style={{ backgroundColor: 'transparent' }} />
+      </SafeAreaView>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.subtitle}>Detect diseases and get agricultural advice</Text>
 
       <View style={styles.imageBox}>
         {image ? (
@@ -117,39 +122,42 @@ export default function ScanScreen() {
           </View>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a2818' },
-  content: { padding: 20, paddingTop: 60, paddingBottom: 80 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  subtitle: { color: '#9DC08B', marginBottom: 20, fontSize: 14 },
+  root: { flex: 1, backgroundColor: COLORS.surface },
+  safe: { backgroundColor: 'rgba(241, 252, 242, 0.8)' },
+  content: { padding: 16, paddingBottom: 100 },
+  subtitle: { color: COLORS.outline, marginBottom: 20, fontSize: 14 },
   imageBox: {
-    height: 220, backgroundColor: '#1a5c3e', borderRadius: 16,
+    height: 220, backgroundColor: COLORS.surfaceContainer, borderRadius: 16,
     justifyContent: 'center', alignItems: 'center', marginBottom: 16, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)',
   },
   image: { width: '100%', height: '100%' },
-  imagePlaceholder: { color: '#666', fontSize: 16 },
+  imagePlaceholder: { color: COLORS.outline, fontSize: 16 },
   btnRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   btn: {
-    flex: 1, backgroundColor: '#1a5c3e', borderRadius: 12,
+    flex: 1, backgroundColor: COLORS.surfaceContainerLowest, borderRadius: 12,
     padding: 14, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)',
   },
-  btnText: { color: '#fff', fontWeight: '600' },
+  btnText: { color: COLORS.secondary, fontWeight: '600' },
   scanBtn: {
-    backgroundColor: '#4CAF50', borderRadius: 12, padding: 16,
+    backgroundColor: COLORS.primaryContainer, borderRadius: 12, padding: 16,
     alignItems: 'center', marginTop: 4, marginBottom: 20,
   },
-  scanBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  resultCard: { backgroundColor: '#1a5c3e', borderRadius: 16, padding: 16 },
-  resultTitle: { color: '#4CAF50', fontWeight: 'bold', fontSize: 16, marginBottom: 12 },
-  resultSubtitle: { color: '#9DC08B', fontWeight: '600', marginTop: 8, marginBottom: 4 },
-  resultRow: { color: '#fff', marginBottom: 6 },
-  resultText: { color: '#ccc', lineHeight: 20 },
-  disclaimer: { backgroundColor: '#0f3d2e', borderRadius: 8, padding: 10, marginTop: 12 },
-  disclaimerText: { color: '#fb8c00', fontSize: 12, lineHeight: 18 },
+  scanBtnText: { color: COLORS.onPrimary, fontWeight: 'bold', fontSize: 16 },
+  resultCard: { backgroundColor: COLORS.surfaceContainerLowest, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
+  resultTitle: { color: COLORS.primaryContainer, fontWeight: 'bold', fontSize: 16, marginBottom: 12 },
+  resultSubtitle: { color: COLORS.secondary, fontWeight: '600', marginTop: 8, marginBottom: 4 },
+  resultRow: { color: COLORS.onSurface, marginBottom: 6 },
+  resultText: { color: COLORS.outline, lineHeight: 20 },
+  disclaimer: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: 8, padding: 10, marginTop: 12 },
+  disclaimerText: { color: '#b45309', fontSize: 12, lineHeight: 18 },
 });
 
 

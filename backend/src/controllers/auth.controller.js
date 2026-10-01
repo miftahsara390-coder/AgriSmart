@@ -10,18 +10,31 @@ const generateToken = (userId) => {
   );
 };
 
+const safeUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  location: user.location,
+  createdAt: user.createdAt,
+});
+
 // POST /api/auth/register
 const register = async (req, res, next) => {
   try {
     const { name, email, password, location } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ error: 'name, email and password are required' });
+      return res.status(400).json({ message: 'name, email and password are required' });
     }
 
-    const existing = await User.findOne({ where: { email } });
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const existing = await User.unscoped().findOne({ where: { email } });
     if (existing) {
-      return res.status(409).json({ error: 'Email already registered' });
+      return res.status(409).json({ message: 'Email already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -31,7 +44,7 @@ const register = async (req, res, next) => {
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: { id: user.id, name: user.name, email: user.email },
+      user: safeUser(user),
       token,
     });
   } catch (error) {
@@ -45,24 +58,25 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'email and password are required' });
+      return res.status(400).json({ message: 'email and password are required' });
     }
 
-    const user = await User.findOne({ where: { email } });
+    // Use unscoped to get password for comparison
+    const user = await User.unscoped().findOne({ where: { email } });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const token = generateToken(user.id);
 
     res.json({
       message: 'Login successful',
-      user: { id: user.id, name: user.name, email: user.email },
+      user: safeUser(user),
       token,
     });
   } catch (error) {
@@ -70,7 +84,7 @@ const login = async (req, res, next) => {
   }
 };
 
-// GET /api/auth/me
+// GET /api/auth/me  (also aliased as /profile)
 const getMe = async (req, res) => {
   res.json({ user: req.user });
 };

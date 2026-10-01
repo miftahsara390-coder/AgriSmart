@@ -1,32 +1,33 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../../src/stores/auth.store';
 
+const COLORS = {
+  surface: '#f1fcf2',
+  onSurface: '#141e18',
+  secondary: '#406653',
+  surfaceContainerLowest: '#ffffff',
+  outline: '#707972',
+  primaryContainer: '#1f5c3f',
+  onPrimary: '#ffffff',
+  surfaceContainerLow: '#ebf7ed',
+};
+
 export default function LoginScreen() {
-  const [email, setEmail]               = useState('sara@agrifarm.ma');
-  const [password, setPassword]         = useState('••••••••••••••••');
+  const [email, setEmail]               = useState('');
+  const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]           = useState(false);
   const { login } = useAuthStore();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      router.replace('/(app)/home');
       return;
     }
     setLoading(true);
@@ -53,126 +54,129 @@ export default function LoginScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-
-            {/* ── Logo Badge ── */}
-            <View style={styles.logoBadgeWrap}>
-              <View style={styles.logoBadge}>
-                <Ionicons name="leaf" size={26} color="#2D7A52" />
-                <Text style={styles.logoLabel}>AgriSmart</Text>
+            {/* Header Logo */}
+            <View style={styles.logoWrap}>
+              <View style={styles.logoIcon}>
+                <MaterialIcons name="eco" size={32} color="#FBBF24" />
+              </View>
+              <View style={styles.logoLineRow}>
+                <View style={styles.line} />
+                <Text style={styles.intelligentFarmingText}>INTELLIGENT FARMING</Text>
+                <View style={styles.line} />
               </View>
             </View>
 
-            {/* ── Title ── */}
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to manage your farm telemetry, soil matrices &amp; harvests.
-            </Text>
-
-            {/* ── Email Field ── */}
-            <View style={styles.formGroup}>
-              <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="name@agrifarm.ma"
-                  placeholderTextColor="#9CB8A8"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <Ionicons name="shield-checkmark-outline" size={20} color="#2D7A52" />
-              </View>
-            </View>
-
-            {/* ── Password Field ── */}
-            <View style={styles.formGroup}>
-              <View style={styles.passwordLabelRow}>
-                <Text style={styles.fieldLabel}>PASSWORD</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert('Forgot Password', 'Please contact your farm administrator.')
-                  }
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={styles.forgotText}>Forgot password?</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  placeholderTextColor="#9CB8A8"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#527563"
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* ── Biometric Card ── */}
-            <View style={styles.bioCard}>
-              <View style={styles.bioIconWrap}>
-                <Ionicons name="finger-print-outline" size={24} color="#2D7A52" />
-              </View>
-              <View style={styles.bioText}>
-                <Text style={styles.bioTitle}>Touch ID ready</Text>
-                <Text style={styles.bioSub}>Instant field login</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.sensorBtn}
-                onPress={() => Alert.alert('Touch ID', 'Sensor scan initialized')}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.sensorBtnText}>Use Sensor</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* ── Sign In Button ── */}
-            <TouchableOpacity
-              style={styles.signInBtn}
-              onPress={handleLogin}
-              disabled={loading}
-              activeOpacity={0.85}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.signInBtnText}>Sign in  →</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* ── Create Account Button ── */}
-            <TouchableOpacity
-              style={styles.createBtn}
-              onPress={() => router.push('/(auth)/register')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.createBtnText}>Create account</Text>
-            </TouchableOpacity>
-
-            {/* ── Security Footer ── */}
-            <View style={styles.secFooter}>
-              <View style={styles.secRow}>
-                <Ionicons name="lock-closed-outline" size={13} color="#2D7A52" />
-                <Text style={styles.secTitle}>Protected by AgriSmart SecureFarm™</Text>
-              </View>
-              <Text style={styles.secSub}>
-                Encrypted offline sync &amp; multi-node agronomic integrity.
+            {/* Title */}
+            <View style={styles.titleWrap}>
+              <Text style={styles.title}>Welcome <Text style={{color: '#15803d'}}>back</Text></Text>
+              <Text style={styles.subtitle}>
+                Sign in to manage your farm telemetry, soil matrices & harvests.
               </Text>
             </View>
 
+            {/* Form */}
+            <View style={styles.form}>
+              <View style={styles.formGroup}>
+                <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="sara@agrifarm.ma"
+                    placeholderTextColor="#a3a3a3"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <MaterialIcons name="verified-user" size={20} color="#406653" />
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <View style={styles.passwordLabelRow}>
+                  <Text style={styles.fieldLabel}>PASSWORD</Text>
+                  <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Please contact admin.')}>
+                    <Text style={styles.forgotText}>Forgot password?</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="••••••••••••"
+                    placeholderTextColor="#a3a3a3"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{top:10,bottom:10,left:10,right:10}}>
+                    <MaterialIcons
+                      name={showPassword ? 'visibility-off' : 'visibility'}
+                      size={20}
+                      color="#a3a3a3"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Biometric Card */}
+              <View style={styles.bioCard}>
+                <View style={styles.bioLeft}>
+                  <View style={styles.bioIconWrap}>
+                    <MaterialIcons name="fingerprint" size={22} color="#15803d" />
+                    <View style={styles.bioDot} />
+                  </View>
+                  <View>
+                    <Text style={styles.bioTitle}>Touch ID ready</Text>
+                    <Text style={styles.bioSub}>Instant field login</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.sensorBtn} activeOpacity={0.8} onPress={() => Alert.alert('Touch ID', 'Scanned')}>
+                  <Text style={styles.sensorBtnText}>Use Sensor</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Action Buttons */}
+              <TouchableOpacity 
+                style={styles.signInBtnOuter}
+                onPress={handleLogin}
+                disabled={loading}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={['#22c55e', '#16a34a', '#15803d']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.signInBtnInner}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Text style={styles.signInBtnText}>Sign in</Text>
+                      <View style={styles.signInBtnIcon}>
+                        <MaterialIcons name="arrow-forward" size={14} color="#15803d" />
+                      </View>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(auth)/register')} activeOpacity={0.8}>
+                <Text style={styles.createBtnText}>Create account</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <View style={styles.footerRow}>
+                <MaterialIcons name="lock" size={14} color="#00442a" />
+                <Text style={styles.footerTitle}>Protected by AgriSmart SecureFarm™</Text>
+              </View>
+              <Text style={styles.footerSub}>
+                Encrypted offline sync & multi-node agronomic integrity.
+              </Text>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -183,7 +187,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F4F9F5',
+    backgroundColor: COLORS.surface,
   },
   safe: {
     flex: 1,
@@ -191,210 +195,226 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 26,
-    paddingVertical: 36,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
-
-  // ── Logo ──────────────────────────────────────────────────────────────────
-  logoBadgeWrap: {
+  logoWrap: {
     alignItems: 'center',
-    marginBottom: 22,
+    marginBottom: 24,
   },
-  logoBadge: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+  logoIcon: {
+    width: 64,
+    height: 64,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#D6EBE0',
-    shadowColor: '#103823',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    gap: 2,
   },
-  logoLabel: {
-    fontSize: 7.5,
+  logoLineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  line: {
+    height: 1,
+    width: 20,
+    backgroundColor: '#065f46',
+    opacity: 0.4,
+  },
+  intelligentFarmingText: {
+    fontSize: 9,
     fontWeight: '800',
-    color: '#2D7A52',
-    letterSpacing: 0.5,
+    color: '#0f3d25',
+    letterSpacing: 2,
   },
-
-  // ── Title ─────────────────────────────────────────────────────────────────
+  titleWrap: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
   title: {
-    fontSize: 27,
+    fontSize: 30,
     fontWeight: '800',
-    color: '#0D2B1E',
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.3,
+    color: '#141e18',
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#527563',
+    color: '#404943',
     textAlign: 'center',
+    marginTop: 6,
     lineHeight: 20,
-    paddingHorizontal: 12,
-    marginBottom: 30,
+    paddingHorizontal: 16,
   },
-
-  // ── Form ──────────────────────────────────────────────────────────────────
+  form: {
+    width: '100%',
+  },
   formGroup: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
   fieldLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#4A6A58',
-    letterSpacing: 1.0,
-    marginBottom: 8,
+    color: '#404943',
+    letterSpacing: 1,
+    marginBottom: 6,
+    paddingHorizontal: 2,
   },
   passwordLabelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    paddingHorizontal: 2,
   },
   forgotText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#2D7A52',
+    color: '#15803d',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#D5E6DC',
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    height: 52,
-    gap: 10,
-    shadowColor: '#103823',
+    height: 48,
+    shadowColor: '#17211b',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: '#0D2B1E',
+    color: '#141e18',
   },
-
-  // ── Biometric ─────────────────────────────────────────────────────────────
   bioCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5EE',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surfaceContainerLow,
     borderRadius: 16,
-    padding: 13,
-    marginBottom: 26,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#CDE8D8',
-    gap: 12,
+    borderColor: 'rgba(6, 95, 70, 0.1)',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  bioLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   bioIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    backgroundColor: '#FFFFFF',
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 95, 70, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#103823',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  bioText: {
-    flex: 1,
+  bioDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   bioTitle: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: '#0D2B1E',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#141e18',
   },
   bioSub: {
-    fontSize: 11.5,
-    color: '#527563',
-    marginTop: 1,
+    fontSize: 11,
+    color: '#404943',
   },
   sensorBtn: {
-    backgroundColor: '#C2E4D0',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    backgroundColor: '#c2ecd3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   sensorBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1B4D36',
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#002113',
   },
-
-  // ── Buttons ───────────────────────────────────────────────────────────────
-  signInBtn: {
-    backgroundColor: '#184E38',
-    borderRadius: 15,
-    height: 55,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#184E38',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.28,
+  signInBtnOuter: {
+    width: '100%',
+    height: 52,
+    borderRadius: 26,
+    overflow: 'hidden',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 6,
+  },
+  signInBtnInner: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
   signInBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16.5,
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+  },
+  signInBtnIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   createBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#D5E6DC',
-    borderRadius: 15,
-    height: 55,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
-    shadowColor: '#103823',
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 95, 70, 0.1)',
+    shadowColor: '#17211b',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   createBtnText: {
-    color: '#0D2B1E',
+    color: '#141e18',
     fontSize: 15,
     fontWeight: '600',
   },
-
-  // ── Security Footer ───────────────────────────────────────────────────────
-  secFooter: {
+  footer: {
+    marginTop: 40,
     alignItems: 'center',
+    gap: 8,
   },
-  secRow: {
+  footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
   },
-  secTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2D7A52',
-  },
-  secSub: {
+  footerTitle: {
     fontSize: 11,
-    color: '#7A9E8C',
-    textAlign: 'center',
-    lineHeight: 16,
+    color: '#404943',
   },
+  footerSub: {
+    fontSize: 11,
+    color: '#707972',
+    textAlign: 'center',
+  }
 });

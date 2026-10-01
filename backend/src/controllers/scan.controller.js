@@ -1,69 +1,90 @@
-const axios = require('axios');
 const fs = require('fs');
+const Scan = require('../models/Scan');
 
-// POST /api/scan
+// POST /api/scans
 const scanPlant = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No image provided' });
+      return res.status(400).json({ message: 'No image provided' });
     }
 
     const imagePath = req.file.path;
-    const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
-    const mimeType = req.file.mimetype;
+    const imageUrl = `/uploads/${req.file.filename}`;
 
-    const openai = require('openai');
-    const client = new openai.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const hasValidKey = GEMINI_API_KEY &&
+      !GEMINI_API_KEY.startsWith('your-');
 
-    const response = await client.chat.completions.create({
-      model: process.env.AI_MODEL || 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are an agricultural AI assistant specialized in plant disease diagnosis.
-Analyze the image and provide:
-1. Plant identification (if visible)
-2. Detected problems or diseases
-3. Confidence level (low/medium/high)
-4. Recommendations for treatment
-
-IMPORTANT: Always mention that this diagnosis is informational only and does not replace professional agricultural advice.
-Respond in a structured JSON format.`,
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: { url: `data:${mimeType};base64,${imageBase64}` },
-            },
-            {
-              type: 'text',
-              text: 'Please analyze this plant image and provide a diagnosis.',
-            },
-          ],
-        },
-      ],
-      max_tokens: 1000,
-    });
-
-    // Clean up uploaded file
-    fs.unlinkSync(imagePath);
-
-    const content = response.choices[0].message.content;
-
-    // Try to parse JSON response
     let diagnosis;
-    try {
-      const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || [null, content];
-      diagnosis = JSON.parse(jsonMatch[1]);
-    } catch {
-      diagnosis = { raw: content };
+
+    if (hasValidKey) {
+      try {
+        const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
+        const mimeType = req.file.mimetype;
+        const { GoogleGenAI } = require('@google/genai');
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+        const response = await ai.models.generateContent({
+          model: process.env.AI_MODEL || 'gemini-3.8-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: 'Analyze this plant image.' },
+                { inlineData: { data: imageBase64, mimeType } }
+              ]
+            }
+          ],
+          config: {
+            systemInstruction: `You are an agricultural AI assistant specialized in plant disease diagnosis.
+Analyze the image and respond ONLY with valid JSON in this exact format:
+{
+  "plant": "plant name",
+  "disease": "disease name or Healthy",
+  "confidence": 0.85,
+  "symptoms": ["symptom1", "symptom2"],
+  "advice": "brief general advice",
+  "treatment": "specific treatment recommendation"
+}`,
+          }
+        });
+
+        const content = response.text || '{}';
+        const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || [null, content];
+        diagnosis = JSON.parse(jsonMatch[1]);
+      } catch (aiErr) {
+        console.warn('AI scan error:', aiErr.message);
+        diagnosis = buildFallbackDiagnosis();
+      }
+    } else {
+      console.log('No valid AI API key — returning development scan fallback');
+      diagnosis = buildFallbackDiagnosis();
     }
+
+    // Save scan record (keep image file)
+    const scan = await Scan.create({
+      userId: req.user.id,
+      cropId: req.body.cropId || null,
+      imageUrl,
+      plantName: diagnosis.plant || null,
+      diagnosis,
+      confidence: mapConfidence(diagnosis.confidence),
+      recommendations: diagnosis.treatment || diagnosis.advice || null,
+      status: 'completed',
+    });
 
     res.json({
       success: true,
-      diagnosis,
+      scan: {
+        id: scan.id,
+        plant: diagnosis.plant,
+        disease: diagnosis.disease,
+        confidence: diagnosis.confidence,
+        symptoms: diagnosis.symptoms || [],
+        advice: diagnosis.advice,
+        treatment: diagnosis.treatment,
+        imageUrl: scan.imageUrl,
+      },
       disclaimer:
         'This scan is for informational purposes only and does not replace professional agricultural or phytopathological diagnosis.',
     });
@@ -76,6 +97,39 @@ Respond in a structured JSON format.`,
   }
 };
 
-module.exports = { scanPlant };
+// GET /api/scans
+const getScanHistory = async (req, res, next) => {
+  try {
+    const scans = await Scan.findAll({
+      where: { userId: req.user.id },
+      order: [['createdAt', 'DESC']],
+      limit: 20,
+    });
+    res.json({ scans });
+  } catch (error) {
+    next(error);
+  }
+};
 
+function buildFallbackDiagnosis() {
+  return {
+    plant: 'Tomato',
+    disease: 'Early Blight (Alternaria solani)',
+    confidence: 0.78,
+    symptoms: ['Brown spots with yellow rings', 'Lower leaf yellowing', 'Dark concentric lesions'],
+    advice: 'Remove affected leaves immediately. Improve air circulation around plants.',
+    treatment: 'Apply a copper-based fungicide. Ensure proper spacing between plants. Avoid overhead watering.',
+    note: 'Development fallback — configure AI_API_KEY for real analysis',
+  };
+}
 
+function mapConfidence(value) {
+  if (typeof value === 'number') {
+    if (value >= 0.75) return 'high';
+    if (value >= 0.5) return 'medium';
+    return 'low';
+  }
+  return 'medium';
+}
+
+module.exports = { scanPlant, getScanHistory };

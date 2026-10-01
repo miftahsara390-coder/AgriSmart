@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { scanPlant } = require('../controllers/scan.controller');
+const { scanPlant, getScanHistory } = require('../controllers/scan.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 const storage = multer.diskStorage({
@@ -29,8 +29,8 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-router.post('/', authMiddleware, upload.single('image'), scanPlant);
+router.use(authMiddleware);
+router.get('/', getScanHistory);
+router.post('/', upload.single('image'), scanPlant);
 
 module.exports = router;
-
-

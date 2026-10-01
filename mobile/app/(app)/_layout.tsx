@@ -1,102 +1,150 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type IoniconName = keyof typeof Ionicons.glyphMap;
+type MaterialIconName = keyof typeof MaterialIcons.glyphMap;
 
-function TabIcon({
+function TabItem({
   name,
-  color,
+  label,
   focused,
 }: {
-  name: IoniconName;
-  color: string;
+  name: MaterialIconName;
+  label: string;
   focused: boolean;
 }) {
   return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-      <Ionicons name={name} size={22} color={color} />
+    <View style={styles.tabItem}>
+      <MaterialIcons 
+        name={name} 
+        size={24} 
+        color={focused ? '#00442a' : '#707972'} 
+      />
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
+        {label}
+      </Text>
     </View>
   );
 }
 
-const TAB_SCREENS: {
-  name: string;
-  title: string;
-  icon: IoniconName;
-  iconActive: IoniconName;
-}[] = [
-  { name: 'home',      title: 'Home',      icon: 'home-outline',              iconActive: 'home' },
-  { name: 'crops',     title: 'Crops',     icon: 'leaf-outline',              iconActive: 'leaf' },
-  { name: 'scan',      title: 'Scan',      icon: 'scan-outline',              iconActive: 'scan' },
-  { name: 'assistant', title: 'AI',        icon: 'chatbubble-ellipses-outline', iconActive: 'chatbubble-ellipses' },
-  { name: 'profile',   title: 'Profile',   icon: 'person-outline',            iconActive: 'person' },
-];
+function ScanTabItem() {
+  return (
+    <View style={styles.scanItem}>
+      <LinearGradient
+        colors={['#15803d', '#22c55e']}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.scanBtnOuter}
+      >
+        <MaterialIcons name="photo-camera" size={24} color="#FFFFFF" />
+      </LinearGradient>
+      <Text style={[styles.tabLabel, { marginTop: 4 }]}>Scan</Text>
+    </View>
+  );
+}
 
 export default function AppLayout() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#2D7A52',
-        tabBarInactiveTintColor: '#8CA898',
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarShowLabel: true,
+        tabBarStyle: [styles.tabBar, { height: 60 + insets.bottom }],
+        tabBarShowLabel: false,
       }}
     >
-      {TAB_SCREENS.map((s) => (
-        <Tabs.Screen
-          key={s.name}
-          name={s.name}
-          options={{
-            title: s.title,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                name={focused ? s.iconActive : s.icon}
-                color={color}
-                focused={focused}
-              />
-            ),
-          }}
-        />
-      ))}
-      {/* Hide calendar from tab bar but keep routing */}
+      <Tabs.Screen
+        name="home"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem name="home" label="Home" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="crops"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem name="spa" label="Crops" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="scan"
+        options={{
+          tabBarIcon: () => <ScanTabItem />,
+        }}
+      />
       <Tabs.Screen
         name="calendar"
-        options={{ href: null }}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem name="calendar-today" label="Calendar" focused={focused} />
+          ),
+        }}
       />
+      <Tabs.Screen
+        name="assistant"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem name="auto-awesome" label="AI" focused={focused} />
+          ),
+        }}
+      />
+      
+      {/* Hidden Screens */}
+      <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="crop-detail" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="add-task" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="add-crop" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="weather" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="notifications" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(241, 252, 242, 0.85)',
     borderTopWidth: 1,
-    borderTopColor: '#E8F2EC',
-    height: Platform.OS === 'ios' ? 88 : 65,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+    borderTopColor: 'rgba(112, 121, 114, 0.3)',
+    position: 'absolute',
+    elevation: 0,
     paddingTop: 8,
-    shadowColor: '#103823',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 10,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 56,
   },
   tabLabel: {
-    fontSize: 10.5,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#707972',
     marginTop: 2,
   },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  tabLabelActive: {
+    color: '#00442a',
+    fontWeight: '600',
   },
-  iconWrapActive: {
-    backgroundColor: '#E8F5EE',
+  scanItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: -16,
+  },
+  scanBtnOuter: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 6,
   },
 });

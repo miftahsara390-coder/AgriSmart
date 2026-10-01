@@ -1,123 +1,272 @@
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, FlatList, StyleSheet,
-  TouchableOpacity, Alert, ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { tasksAPI } from '../../src/services/api';
 
-const PRIORITY_COLORS: Record<string, string> = {
-  high: '#e53935',
-  medium: '#fb8c00',
-  low: '#43a047',
-};
+import { COLORS } from '../../src/constants/theme';
+import Header from '../../src/components/Header';
+import TaskCard from '../../src/components/TaskCard';
 
-const TYPE_ICONS: Record<string, string> = {
-  watering: '💧', fertilizing: '🌿', harvesting: '🌾',
-  planting: '🌱', pesticide: '🧪', other: '📋',
-};
+const DATES = [
+  { day: 'Mon', date: '12', active: false },
+  { day: 'Tue', date: '13', active: false },
+  { day: 'Wed', date: '14', active: true },
+  { day: 'Thu', date: '15', active: false },
+  { day: 'Fri', date: '16', active: false },
+  { day: 'Sat', date: '17', active: false },
+];
 
 export default function CalendarScreen() {
+  const insets = useSafeAreaInsets();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('pending');
+
+  React.useEffect(() => {
+    fetchTasks();
+  }, []);
 
   const fetchTasks = async () => {
-    setLoading(true);
     try {
-      const res = await tasksAPI.getAll({ status: filter !== 'all' ? filter : undefined });
-      setTasks(res.data.tasks);
-    } catch {
-      Alert.alert('Error', 'Failed to load tasks');
+      const today = new Date().toISOString().split('T')[0];
+      const res = await tasksAPI.getAll({ from: today, to: today });
+      setTasks(res.data.tasks || []);
+    } catch (error) {
+      console.error('Failed to fetch tasks', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchTasks(); }, [filter]);
+  const toggleTask = async (id: string | number) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
 
-  const handleComplete = async (id: string) => {
-    await tasksAPI.update(id, { status: 'done' });
-    fetchTasks();
+    try {
+      setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+      if (!task.completed) {
+        await tasksAPI.complete(id.toString());
+      } else {
+        await tasksAPI.update(id.toString(), { completed: false });
+      }
+    } catch (error) {
+      console.error(error);
+      fetchTasks();
+    }
   };
 
-  const handleDelete = async (id: string) => {
-    await tasksAPI.delete(id);
-    fetchTasks();
-  };
+
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>📅 Agricultural Calendar</Text>
+    <View style={styles.root}>
+      <StatusBar style="dark" />
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <Header title="Calendar" style={{ backgroundColor: 'transparent' }} />
 
-      <View style={styles.filterRow}>
-        {['all', 'pending', 'done'].map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterBtn, filter === f && styles.filterActive]}
-            onPress={() => setFilter(f)}
-          >
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        {/* Date Selector */}
+        <View style={styles.dateSelectorWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateSelector}>
+            {DATES.map((item, idx) => (
+              <TouchableOpacity 
+                key={idx} 
+                style={[styles.dateBox, item.active && styles.dateBoxActive]}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.dateDay, item.active && styles.dateDayActive]}>{item.day}</Text>
+                <Text style={[styles.dateNum, item.active && styles.dateNumActive]}>{item.date}</Text>
+                {item.active && <View style={styles.dateActiveDot} />}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </SafeAreaView>
 
-      {loading ? (
-        <ActivityIndicator color="#4CAF50" style={{ marginTop: 40 }} />
-      ) : (
-        <FlatList
-          data={tasks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.taskCard}>
-              <Text style={styles.taskIcon}>{TYPE_ICONS[item.type] || '📋'}</Text>
-              <View style={styles.taskInfo}>
-                <Text style={styles.taskTitle}>{item.title}</Text>
-                {item.dueDate && <Text style={styles.taskDate}>📅 {item.dueDate}</Text>}
-                {item.Crop && <Text style={styles.taskCrop}>🌱 {item.Crop.name}</Text>}
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]} showsVerticalScrollIndicator={false}>
+        
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Today's Schedule</Text>
+          <View style={styles.taskBadge}>
+            <Text style={styles.taskBadgeText}>{tasks.filter(t=>!t.completed).length} pending</Text>
+          </View>
+        </View>
+
+        {/* Timeline Tasks */}
+        <View style={styles.timeline}>
+          {tasks.map((task, idx) => (
+            <View key={task.id} style={styles.timelineItem}>
+              {/* Left Time Column */}
+              <View style={styles.timeColumn}>
+                <Text style={styles.timeText}>{task.time || (task.dueDate ? new Date(task.dueDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '08:00')}</Text>
+                {idx !== tasks.length - 1 && <View style={styles.timelineLine} />}
               </View>
-              <View style={styles.taskActions}>
-                <View style={[styles.priorityDot, { backgroundColor: PRIORITY_COLORS[item.priority] || '#666' }]} />
-                {item.status === 'pending' && (
-                  <TouchableOpacity onPress={() => handleComplete(item.id)}>
-                    <Text style={{ fontSize: 20 }}>✅</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                  <Text style={{ fontSize: 20 }}>🗑️</Text>
-                </TouchableOpacity>
+
+              {/* Task Card */}
+              <View style={{ flex: 1 }}>
+                <TaskCard task={task} onToggle={toggleTask} variant="calendar" />
               </View>
             </View>
+          ))}
+          {tasks.length === 0 && (
+            <Text style={{color: COLORS.outline, textAlign: 'center', marginTop: 32}}>No tasks for today. Enjoy your day!</Text>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>No tasks found</Text>}
-          contentContainerStyle={{ paddingBottom: 80 }}
-        />
-      )}
+        </View>
+
+      </ScrollView>
+
+      {/* Floating Add Button */}
+      <TouchableOpacity style={[styles.fabBtnOuter, { bottom: Math.max(insets.bottom, 16) + 100, zIndex: 100 }]} activeOpacity={0.8} onPress={() => router.push('/(app)/add-task')}>
+        <LinearGradient
+          colors={['#22c55e', '#16a34a', '#15803d']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.fabBtnInner}
+        >
+          <MaterialIcons name="add" size={24} color="#fff" />
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a2818', paddingTop: 60 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#fff', paddingHorizontal: 20, marginBottom: 16 },
-  filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12, gap: 8 },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#1a5c3e' },
-  filterActive: { backgroundColor: '#4CAF50' },
-  filterText: { color: '#9DC08B', fontSize: 13 },
-  filterTextActive: { color: '#fff', fontWeight: 'bold' },
-  taskCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a5c3e',
-    marginHorizontal: 16, marginBottom: 10, borderRadius: 14, padding: 14, gap: 12,
+  root: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
   },
-  taskIcon: { fontSize: 28 },
-  taskInfo: { flex: 1 },
-  taskTitle: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  taskDate: { color: '#9DC08B', fontSize: 12, marginTop: 2 },
-  taskCrop: { color: '#9DC08B', fontSize: 12 },
-  taskActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  priorityDot: { width: 10, height: 10, borderRadius: 5 },
-  empty: { color: '#666', textAlign: 'center', marginTop: 60, fontSize: 16 },
+  safe: {
+    backgroundColor: 'rgba(241, 252, 242, 0.95)',
+    zIndex: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(112, 121, 114, 0.15)',
+  },
+  dateSelectorWrap: {
+    paddingBottom: 16,
+  },
+  dateSelector: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  dateBox: {
+    width: 54,
+    height: 68,
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  dateBoxActive: {
+    backgroundColor: '#15803d',
+    borderColor: '#15803d',
+  },
+  dateDay: {
+    fontSize: 11,
+    color: COLORS.outline,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  dateDayActive: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  dateNum: {
+    fontSize: 18,
+    color: COLORS.onSurface,
+    fontWeight: '700',
+  },
+  dateNumActive: {
+    color: '#fff',
+  },
+  dateActiveDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#4ade80',
+    position: 'absolute',
+    bottom: 6,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.onSurface,
+    letterSpacing: -0.2,
+  },
+  taskBadge: {
+    backgroundColor: COLORS.surfaceContainer,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  taskBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.secondary,
+  },
+  timeline: {
+    marginLeft: 4,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  timeColumn: {
+    width: 50,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  timeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.outline,
+    marginTop: 4,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: COLORS.surfaceContainer,
+    marginTop: 12,
+    marginBottom: -8,
+  },
+  fabBtnOuter: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#00442a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  fabBtnInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
 });
-
-

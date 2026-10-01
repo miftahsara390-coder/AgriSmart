@@ -4,15 +4,9 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install dependencies
-RUN npm ci
-
-# Generate Prisma client
-RUN npx prisma generate
+RUN npm ci --omit=dev
 
 # Copy source code
 COPY . .
@@ -24,6 +18,6 @@ EXPOSE 5000
 ENV NODE_ENV=production
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "src/server.js"]
 
 

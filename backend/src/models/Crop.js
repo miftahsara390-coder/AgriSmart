@@ -15,28 +15,50 @@ const Crop = sequelize.define('Crop', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  type: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   variety: {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  plantedAt: {
+  stage: {
+    type: DataTypes.ENUM('Seed', 'Growth', 'Flowering', 'Fruit', 'Harvest'),
+    allowNull: true,
+    defaultValue: 'Seed',
+  },
+  status: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Healthy',
+  },
+  plantingDate: {
     type: DataTypes.DATEONLY,
     allowNull: true,
   },
-  area: {
-    type: DataTypes.FLOAT,
+  expectedHarvestDate: {
+    type: DataTypes.DATEONLY,
     allowNull: true,
   },
-  areaUnit: {
-    type: DataTypes.ENUM('hectare', 'acre', 'm2'),
-    defaultValue: 'hectare',
+  location: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
-  status: {
-    type: DataTypes.ENUM('growing', 'harvested', 'failed'),
-    defaultValue: 'growing',
+  field: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  row: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   notes: {
     type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  imageUrl: {
+    type: DataTypes.STRING,
     allowNull: true,
   },
 }, {
@@ -45,5 +67,3 @@ const Crop = sequelize.define('Crop', {
 });
 
 module.exports = Crop;
-
-

@@ -23,8 +23,17 @@ const Task = sequelize.define('Task', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  // Keep dueDate as alias for date for backwards compatibility
   dueDate: {
     type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  time: {
+    type: DataTypes.STRING,
     allowNull: true,
   },
   type: {
@@ -34,6 +43,13 @@ const Task = sequelize.define('Task', {
   status: {
     type: DataTypes.ENUM('pending', 'done', 'cancelled'),
     defaultValue: 'pending',
+  },
+  // completed is a virtual alias
+  completed: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return this.status === 'done';
+    },
   },
   priority: {
     type: DataTypes.ENUM('low', 'medium', 'high'),
@@ -45,5 +61,3 @@ const Task = sequelize.define('Task', {
 });
 
 module.exports = Task;
-
-

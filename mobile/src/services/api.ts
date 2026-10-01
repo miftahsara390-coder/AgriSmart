@@ -9,7 +9,7 @@ const API_URL = `http://${BASE_HOST}:5000/api`;
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 8000, // 8s — fail fast so the app doesn't hang
+  timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -27,7 +27,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Token expired — clean up local storage
+      // Token expired or invalid — clean up local storage
       await SecureStore.deleteItemAsync('accessToken');
     }
     return Promise.reject(error);
@@ -41,6 +41,17 @@ export const authAPI = {
   login: (data: { email: string; password: string }) =>
     api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
+  profile: () => api.get('/auth/profile'),
+};
+
+// ─── Home Dashboard ───────────────────────────────────────────────────────────
+export const homeAPI = {
+  getDashboard: () => api.get('/home'),
+};
+
+// ─── Weather ─────────────────────────────────────────────────────────────────
+export const weatherAPI = {
+  get: (city?: string) => api.get('/weather', { params: city ? { city } : undefined }),
 };
 
 // ─── Crops ───────────────────────────────────────────────────────────────────
@@ -50,36 +61,54 @@ export const cropsAPI = {
   create: (data: any) => api.post('/crops', data),
   update: (id: string, data: any) => api.put(`/crops/${id}`, data),
   delete: (id: string) => api.delete(`/crops/${id}`),
+  getTelemetry: () => api.get('/crops/telemetry'),
+  // Observations
+  addObservation: (cropId: string, data: { note: string; imageUrl?: string }) =>
+    api.post(`/crops/${cropId}/observations`, data),
+  getObservations: (cropId: string) => api.get(`/crops/${cropId}/observations`),
+  // Sensor history
+  getSensorHistory: (cropId: string) => api.get(`/crops/${cropId}/sensors`),
+  // Intelligence
+  getIntelligence: (cropId: string) => api.get(`/crops/${cropId}/intelligence`),
+  // AI Advice
+  getAiAdvice: (cropId: string, question?: string) =>
+    api.post(`/crops/${cropId}/ai-advice`, { question }),
 };
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 export const tasksAPI = {
-  getAll: (params?: { status?: string; cropId?: string }) =>
+  getAll: (params?: { status?: string; cropId?: string; from?: string; to?: string }) =>
     api.get('/tasks', { params }),
+  getCalendar: (date: string) => api.get('/tasks/calendar', { params: { date } }),
+  getById: (id: string) => api.get(`/tasks/${id}`),
   create: (data: any) => api.post('/tasks', data),
   update: (id: string, data: any) => api.put(`/tasks/${id}`, data),
+  complete: (id: string) => api.put(`/tasks/${id}`, { completed: true }),
   delete: (id: string) => api.delete(`/tasks/${id}`),
 };
 
 // ─── Scan ─────────────────────────────────────────────────────────────────────
 export const scanAPI = {
-  scan: (imageUri: string) => {
+  scan: (imageUri: string, cropId?: string) => {
     const form = new FormData();
     form.append('image', {
       uri: imageUri,
       type: 'image/jpeg',
       name: 'scan.jpg',
     } as any);
-    return api.post('/scan', form, {
+    if (cropId) form.append('cropId', cropId);
+    return api.post('/scans', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  getHistory: () => api.get('/scans'),
 };
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
 export const agentAPI = {
   chat: (message: string, history?: Array<{ role: string; content: string }>) =>
     api.post('/agent/chat', { message, history: history ?? [] }),
+  getHistory: () => api.get('/agent/history'),
 };
 
 export default api;

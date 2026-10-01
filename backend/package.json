@@ -5,19 +5,21 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
+    "dev:fresh": "node kill-port.js && node src/server.js",
     "start": "node src/server.js",
+    "setup-db": "node setup-db.js",
     "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@google/genai": "^2.25.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.4.0",
-    "openai": "^4.78.1",
     "pg": "^8.13.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.5",
@@ -40,5 +42,3 @@
   },
   "private": true
 }
-
-
