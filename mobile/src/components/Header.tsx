@@ -26,8 +26,9 @@ export default function Header({ title, showBack = false, style }: HeaderProps) 
           </TouchableOpacity>
         )}
         <Image
-          source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1XfMtFAOcmuHEg8XO0zo-gDcDBoIll2BphUhgM78xB6D5lipEly4OXTI7o-Y0XQg4B8IkD-XgJRAKyXkb2MSxBZ-umkl93mDO8pX4j8NAuhRKcu_MMmL8vpW3HKTR7j2ZtvPooEW6zG8qeY9V5EJfcyONjdZMFh6Znii_ofr3jcqHwrUOC8DDiwV_wS_7cRBywlVgjL2Gzi7Dwd4JCpaB-PvFnHv5mmptJvqg7tmPfu1BJaS6x3aq1EuRm_' }}
+          source={require('../../assets/agrismart_logo.png')}
           style={styles.logo}
+          resizeMode="contain"
         />
         <View>
           {!showBack && <Text style={styles.appName}>AGRISMART</Text>}
@@ -73,9 +74,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
   },
   appName: {
     fontSize: 11,

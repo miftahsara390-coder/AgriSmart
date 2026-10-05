@@ -1,44 +1,36 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import {View,Text,StyleSheet,ImageBackground,TouchableOpacity,Platform,Image,} from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       
       <ImageBackground
-        source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1V79dv3GGegOJV7ZrHErXB-RtLeulCqcw7qn6NoeK5mtX2PmI88bm-0sahTSv2yg84bQllDnvhIfXAEIwg9MnUNAjGr4rSkkEJKtsK5t2Z2N5-Yhz9d0rYrANDTjNPL9D5ks-aTs4TgILqIDGuADHTpLftZVe448Xj-yd0LN_VX6b2tTLtqXQCbwGcjYGysATisoIjbDIWaOLxmq2I044IptwmZxwaBz_kh6rI_Gq_npJWQyG23_gT3c2c' }}
+        source={require('../../assets/images/home_bg.jpg')}
         style={styles.bgImage}
         resizeMode="cover"
       >
         <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.95)']}
-          locations={[0, 0.3, 0.6, 1]}
+          colors={['rgba(0,0,0,0.08)', 'transparent', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.95)']}
+          locations={[0, 0.25, 0.6, 1]}
           style={styles.gradient}
         />
 
         {/* Top Header */}
-        <View style={styles.header}>
-          <View style={styles.logoBadge}>
-            <View style={styles.logoIconWrap}>
-              <MaterialIcons name="eco" size={24} color="#15803d" />
-            </View>
-            <View style={styles.logoTextWrap}>
-              <Text style={styles.logoTextMain}>AgriSmart</Text>
-              <Text style={styles.logoTextSub}>INTELLIGENT FARMING</Text>
-            </View>
-          </View>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 24) + 24 }]}>
+          <Image
+            source={require('../../assets/agrismart_logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Bottom Content */}
@@ -120,50 +112,18 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     alignItems: 'center',
     zIndex: 10,
   },
-  logoBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  logoIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  logoTextWrap: {
-    justifyContent: 'center',
-  },
-  logoTextMain: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
-  logoTextSub: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: 'rgba(255,255,255,0.8)',
-    letterSpacing: 1.5,
-    marginTop: 2,
+  logoImage: {
+    width: 170,
+    height: 95,
   },
   bottomContent: {
     flex: 1,
     justifyContent: 'flex-end',
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 80,
     zIndex: 10,
   },
   welcomePill: {

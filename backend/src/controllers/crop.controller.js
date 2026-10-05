@@ -80,7 +80,7 @@ const getCropById = async (req, res, next) => {
 
     const today = new Date().toISOString().split('T')[0];
 
-    const [nextTask, observations, sensorHistory] = await Promise.all([
+    let [nextTask, observations, sensorHistory] = await Promise.all([
       Task.findOne({
         where: {
           cropId: crop.id,
@@ -88,9 +88,10 @@ const getCropById = async (req, res, next) => {
           [Op.or]: [
             { date: { [Op.gte]: today } },
             { dueDate: { [Op.gte]: today } },
+            { date: null },
           ],
         },
-        order: [['date', 'ASC'], ['dueDate', 'ASC']],
+        order: [['date', 'ASC'], ['time', 'ASC']],
       }),
       Observation.findAll({
         where: { cropId: crop.id },
@@ -103,6 +104,13 @@ const getCropById = async (req, res, next) => {
         limit: 20,
       }),
     ]);
+
+    if (!nextTask) {
+      nextTask = await Task.findOne({
+        where: { cropId: crop.id },
+        order: [['createdAt', 'DESC']],
+      });
+    }
 
     const progressPercent = stageProgression[crop.stage] || 0;
 

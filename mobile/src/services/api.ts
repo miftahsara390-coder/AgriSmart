@@ -80,6 +80,7 @@ export const tasksAPI = {
   getAll: (params?: { status?: string; cropId?: string; from?: string; to?: string }) =>
     api.get('/tasks', { params }),
   getCalendar: (date: string) => api.get('/tasks/calendar', { params: { date } }),
+  getRecommendation: () => api.get('/tasks/recommendation'),
   getById: (id: string) => api.get(`/tasks/${id}`),
   create: (data: any) => api.post('/tasks', data),
   update: (id: string, data: any) => api.put(`/tasks/${id}`, data),

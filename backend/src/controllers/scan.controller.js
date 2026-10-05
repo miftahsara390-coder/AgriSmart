@@ -85,6 +85,15 @@ Analyze the image and respond ONLY with valid JSON in this exact format:
         treatment: diagnosis.treatment,
         imageUrl: scan.imageUrl,
       },
+      diagnosis: {
+        plant: diagnosis.plant,
+        problem: diagnosis.disease,
+        confidence: typeof diagnosis.confidence === 'number' ? `${Math.round(diagnosis.confidence * 100)}%` : diagnosis.confidence,
+        recommendations: diagnosis.treatment || diagnosis.advice,
+        symptoms: diagnosis.symptoms || [],
+        advice: diagnosis.advice,
+        treatment: diagnosis.treatment,
+      },
       disclaimer:
         'This scan is for informational purposes only and does not replace professional agricultural or phytopathological diagnosis.',
     });

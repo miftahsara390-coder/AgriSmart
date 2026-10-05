@@ -5,7 +5,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import { COLORS } from '../../src/constants/theme';
-import Header from '../../src/components/Header';
 
 export default function NotificationsScreen() {
   const [notifications] = useState([

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +27,6 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      router.replace('/(app)/home');
       return;
     }
     setLoading(true);
@@ -35,7 +34,8 @@ export default function LoginScreen() {
       await login(email.trim(), password);
       router.replace('/(app)/home');
     } catch (err: any) {
-      Alert.alert('Login Failed', err.response?.data?.error || 'Something went wrong');
+      const message = err.response?.data?.message || err.response?.data?.error || err.message || 'Something went wrong';
+      Alert.alert('Login Failed', message);
     } finally {
       setLoading(false);
     }
@@ -56,14 +56,11 @@ export default function LoginScreen() {
           >
             {/* Header Logo */}
             <View style={styles.logoWrap}>
-              <View style={styles.logoIcon}>
-                <MaterialIcons name="eco" size={32} color="#FBBF24" />
-              </View>
-              <View style={styles.logoLineRow}>
-                <View style={styles.line} />
-                <Text style={styles.intelligentFarmingText}>INTELLIGENT FARMING</Text>
-                <View style={styles.line} />
-              </View>
+              <Image
+                source={require('../../assets/agrismart_logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
 
             {/* Title */}
@@ -117,23 +114,6 @@ export default function LoginScreen() {
                     />
                   </TouchableOpacity>
                 </View>
-              </View>
-
-              {/* Biometric Card */}
-              <View style={styles.bioCard}>
-                <View style={styles.bioLeft}>
-                  <View style={styles.bioIconWrap}>
-                    <MaterialIcons name="fingerprint" size={22} color="#15803d" />
-                    <View style={styles.bioDot} />
-                  </View>
-                  <View>
-                    <Text style={styles.bioTitle}>Touch ID ready</Text>
-                    <Text style={styles.bioSub}>Instant field login</Text>
-                  </View>
-                </View>
-                <TouchableOpacity style={styles.sensorBtn} activeOpacity={0.8} onPress={() => Alert.alert('Touch ID', 'Scanned')}>
-                  <Text style={styles.sensorBtnText}>Use Sensor</Text>
-                </TouchableOpacity>
               </View>
 
               {/* Action Buttons */}
@@ -194,41 +174,22 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   logoWrap: {
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  logoIcon: {
-    width: 64,
-    height: 64,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoLineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginBottom: 8,
     marginTop: 4,
   },
-  line: {
-    height: 1,
-    width: 20,
-    backgroundColor: '#065f46',
-    opacity: 0.4,
-  },
-  intelligentFarmingText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#0f3d25',
-    letterSpacing: 2,
+  logoImage: {
+    width: 140,
+    height: 70,
   },
   titleWrap: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   title: {
     fontSize: 30,
@@ -288,69 +249,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#141e18',
   },
-  bioCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surfaceContainerLow,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 95, 70, 0.1)',
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  bioLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  bioIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: COLORS.surfaceContainerLowest,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 95, 70, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bioDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#22c55e',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  bioTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#141e18',
-  },
-  bioSub: {
-    fontSize: 11,
-    color: '#404943',
-  },
-  sensorBtn: {
-    backgroundColor: '#c2ecd3',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  sensorBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#002113',
-  },
   signInBtnOuter: {
     width: '100%',
     height: 52,
     borderRadius: 26,
     overflow: 'hidden',
+    marginTop: 8,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

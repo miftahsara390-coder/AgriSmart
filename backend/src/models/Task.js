@@ -37,8 +37,8 @@ const Task = sequelize.define('Task', {
     allowNull: true,
   },
   type: {
-    type: DataTypes.ENUM('watering', 'fertilizing', 'harvesting', 'planting', 'pesticide', 'other'),
-    defaultValue: 'other',
+    type: DataTypes.STRING,
+    defaultValue: 'Other',
   },
   status: {
     type: DataTypes.ENUM('pending', 'done', 'cancelled'),

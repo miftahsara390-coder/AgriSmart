@@ -41,32 +41,54 @@ jest.mock('../../src/models/User', () => ({
   findByPk: jest.fn(),
   create: jest.fn(),
   unscoped: jest.fn().mockReturnThis(),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
 }));
 jest.mock('../../src/models/Crop', () => ({
   findAll: jest.fn().mockResolvedValue([]),
   findOne: jest.fn(),
-  create: jest.fn(),
+  create: jest.fn().mockResolvedValue({ id: 'crop-1', name: 'Tomato' }),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
 }));
 jest.mock('../../src/models/Task', () => ({
   findAll: jest.fn().mockResolvedValue([]),
   findOne: jest.fn(),
-  create: jest.fn(),
+  create: jest.fn().mockResolvedValue({ id: 'task-1', title: 'Task' }),
+  count: jest.fn().mockResolvedValue(0),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
 }));
 jest.mock('../../src/models/Scan', () => ({
   findAll: jest.fn().mockResolvedValue([]),
   create: jest.fn(),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
 }));
 jest.mock('../../src/models/Observation', () => ({
   findAll: jest.fn().mockResolvedValue([]),
   create: jest.fn(),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
 }));
 jest.mock('../../src/models/SensorData', () => ({
   findAll: jest.fn().mockResolvedValue([]),
   findOne: jest.fn().mockResolvedValue(null),
+  create: jest.fn().mockResolvedValue({ id: 'sensor-1' }),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
 }));
 jest.mock('../../src/models/Conversation', () => ({
   findAll: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({ id: 'conv-1' }),
+  hasMany: jest.fn(),
+  belongsTo: jest.fn(),
+}));
+jest.mock('../../src/ai/agent', () => ({
+  runAgent: jest.fn().mockResolvedValue({
+    content: 'Yellow leaves are usually caused by nitrogen deficiency or overwatering.',
+    toolsUsed: [],
+  }),
 }));
 
 const supertest = require('supertest');

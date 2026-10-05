@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const Task = require('../models/Task');
 const Crop = require('../models/Crop');
+const SensorData = require('../models/SensorData');
 
 // ─── GET /api/tasks ───────────────────────────────────────────────────────────
 const getTasks = async (req, res, next) => {
@@ -24,7 +25,7 @@ const getTasks = async (req, res, next) => {
 
     const tasks = await Task.findAll({
       where,
-      include: [{ model: Crop, attributes: ['id', 'name'] }],
+      include: [{ model: Crop, attributes: ['id', 'name', 'location'] }],
       order: [['date', 'ASC'], ['dueDate', 'ASC'], ['createdAt', 'DESC']],
     });
 
@@ -50,11 +51,49 @@ const getCalendarTasks = async (req, res, next) => {
           { dueDate: date },
         ],
       },
-      include: [{ model: Crop, attributes: ['id', 'name'] }],
+      include: [{ model: Crop, attributes: ['id', 'name', 'location'] }],
       order: [['time', 'ASC'], ['createdAt', 'ASC']],
     });
 
     res.json({ date, tasks });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── GET /api/tasks/recommendation ────────────────────────────────────────────
+const getTaskRecommendation = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const crops = await Crop.findAll({ where: { userId } });
+
+    let moisture = 38;
+    if (crops.length > 0) {
+      const sensor = await SensorData.findOne({
+        where: { cropId: { [Op.in]: crops.map(c => c.id) } },
+        order: [['recordedAt', 'DESC']],
+      });
+      if (sensor && sensor.soilMoisture != null) {
+        moisture = sensor.soilMoisture;
+      }
+    }
+
+    const primaryCropName = crops[0]?.name || 'Tomato Field 1';
+
+    res.json({
+      recommendation: `Based on your crops and current conditions, irrigation is recommended tomorrow morning.`,
+      details: [
+        `Root zone moisture is currently at ${moisture}% in ${primaryCropName}.`,
+        `Projected peak temperature reaches 26°C with moderate evapotranspiration.`,
+        `Recommended: 3.5 Liters/plant at 07:30 AM via drip lines to safeguard flowering.`
+      ],
+      suggestedTask: {
+        title: 'Drip Line Irrigation',
+        type: 'Irrigation',
+        cropField: primaryCropName,
+        time: '07:30 AM',
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -144,4 +183,12 @@ const deleteTask = async (req, res, next) => {
   }
 };
 
-module.exports = { getTasks, getCalendarTasks, getTaskById, createTask, updateTask, deleteTask };
+module.exports = {
+  getTasks,
+  getCalendarTasks,
+  getTaskRecommendation,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+};

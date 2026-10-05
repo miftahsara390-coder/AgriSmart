@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -67,10 +68,11 @@ export default function RegisterScreen() {
 
             {/* ── Logo Badge ── */}
             <View style={styles.logoBadgeWrap}>
-              <View style={styles.logoBadge}>
-                <Ionicons name="leaf" size={26} color="#2D7A52" />
-                <Text style={styles.logoLabel}>AgriSmart</Text>
-              </View>
+              <Image
+                source={require('../../assets/agrismart_logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
 
             {/* ── Title ── */}
@@ -233,37 +235,20 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 26,
-    paddingVertical: 36,
+    paddingTop: 12,
+    paddingBottom: 36,
   },
 
   // ── Logo ──────────────────────────────────────────────────────────────────
   logoBadgeWrap: {
     alignItems: 'center',
-    marginBottom: 22,
+    marginBottom: 8,
+    marginTop: 4,
   },
-  logoBadge: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#D6EBE0',
-    shadowColor: '#103823',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    gap: 2,
-  },
-  logoLabel: {
-    fontSize: 7.5,
-    fontWeight: '800',
-    color: '#2D7A52',
-    letterSpacing: 0.5,
+  logoImage: {
+    width: 140,
+    height: 70,
   },
 
   // ── Title ─────────────────────────────────────────────────────────────────
@@ -366,13 +351,13 @@ const styles = StyleSheet.create({
 
   // ── Buttons ───────────────────────────────────────────────────────────────
   signInBtn: {
-    backgroundColor: '#184E38',
+    backgroundColor: '#11b91aff',
     borderRadius: 15,
     height: 55,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#184E38',
+    shadowColor: '#1aa16bff',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.28,
     shadowRadius: 10,
@@ -393,7 +378,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 30,
-    shadowColor: '#103823',
+    shadowColor: '#15e67aff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -418,7 +403,7 @@ const styles = StyleSheet.create({
   secTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#2D7A52',
+    color: '#2a8d5aff',
   },
   secSub: {
     fontSize: 11,

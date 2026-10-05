@@ -19,6 +19,8 @@ const safeUser = (user) => ({
   createdAt: user.createdAt,
 });
 
+const { ensureUserFarmData } = require('../utils/seedUserData');
+
 // POST /api/auth/register
 const register = async (req, res, next) => {
   try {
@@ -39,6 +41,8 @@ const register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashedPassword, location });
+
+    await ensureUserFarmData(user.id);
 
     const token = generateToken(user.id);
 
@@ -71,6 +75,8 @@ const login = async (req, res, next) => {
     if (!valid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    await ensureUserFarmData(user.id);
 
     const token = generateToken(user.id);
 

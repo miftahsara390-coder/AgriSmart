@@ -141,10 +141,17 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 4px 16px rgba(34, 197, 94, 0.35)',
+      } as any,
+      default: {
+        shadowColor: '#22c55e',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+      },
+    }),
     elevation: 6,
   },
 });

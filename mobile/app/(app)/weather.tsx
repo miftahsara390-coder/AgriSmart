@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 
 import { COLORS } from '../../src/constants/theme';
 import { weatherAPI } from '../../src/services/api';
-import Header from '../../src/components/Header';
 
 export default function WeatherScreen() {
   const [weatherData, setWeatherData] = useState<any>(null);
