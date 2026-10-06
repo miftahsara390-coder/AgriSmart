@@ -4,28 +4,35 @@ const Conversation = require('../models/Conversation');
 // POST /api/agent/chat
 const chat = async (req, res, next) => {
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], image, mimeType } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ message: 'message is required' });
+    if (!message && !image) {
+      return res.status(400).json({ message: 'message or image is required' });
     }
 
     const agentResponse = await runAgent({
-      userMessage: message,
+      userMessage: message || 'Please analyze this uploaded photo and provide agricultural advice.',
       history,
-      userId: req.user.id,
+      userId: req.user?.id,
+      image,
+      mimeType,
     });
 
-    // Persist conversation
-    const conversation = await Conversation.create({
-      userId: req.user.id,
-      message,
-      response: agentResponse.content,
-    });
+    let conversationId = null;
+    if (req.user?.id) {
+      // Persist conversation
+      const conversation = await Conversation.create({
+        userId: req.user.id,
+        message: message || '[Attached photo for analysis]',
+        response: agentResponse.content,
+      });
+      conversationId = conversation.id;
+    }
 
     res.json({
       response: agentResponse.content,
-      conversationId: conversation.id,
+      conversationId,
+      model: agentResponse.model || 'gemini',
     });
   } catch (error) {
     next(error);
@@ -37,7 +44,7 @@ const getHistory = async (req, res, next) => {
   try {
     const conversations = await Conversation.findAll({
       where: { userId: req.user.id },
-      order: [['createdAt', 'DESC']],
+      order: [['createdAt', 'ASC']],
       limit: 50,
     });
     res.json({ conversations });
@@ -46,4 +53,16 @@ const getHistory = async (req, res, next) => {
   }
 };
 
-module.exports = { chat, getHistory };
+// DELETE /api/agent/history
+const clearHistory = async (req, res, next) => {
+  try {
+    await Conversation.destroy({
+      where: { userId: req.user.id },
+    });
+    res.json({ message: 'Conversation history cleared successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { chat, getHistory, clearHistory };

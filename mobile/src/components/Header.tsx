@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { COLORS } from '../constants/theme';
+import { useNotificationStore } from '../stores/notification.store';
 
 interface HeaderProps {
   title: string;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export default function Header({ title, showBack = false, style }: HeaderProps) {
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotificationStore();
 
   return (
     <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }, style]}>
@@ -38,7 +40,7 @@ export default function Header({ title, showBack = false, style }: HeaderProps) 
       <View style={styles.headerRight}>
         <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(app)/notifications')}>
           <MaterialIcons name="notifications-none" size={24} color={COLORS.onSurface} />
-          <View style={styles.notifDot} />
+          {unreadCount > 0 && <View style={styles.notifDot} />}
         </TouchableOpacity>
         <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/(app)/profile')}>
           <Image

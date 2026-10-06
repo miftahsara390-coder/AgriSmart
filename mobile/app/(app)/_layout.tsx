@@ -22,14 +22,16 @@ function TabItem({
         size={24} 
         color={focused ? '#00442a' : '#707972'} 
       />
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
+      <Text numberOfLines={1} style={[styles.tabLabel, focused && styles.tabLabelActive]}>
         {label}
       </Text>
     </View>
   );
 }
 
-function ScanTabItem() {
+import { useTranslation } from '../../src/stores/language.store';
+
+function ScanTabItem({ label }: { label: string }) {
   return (
     <View style={styles.scanItem}>
       <LinearGradient
@@ -40,16 +42,18 @@ function ScanTabItem() {
       >
         <MaterialIcons name="photo-camera" size={24} color="#FFFFFF" />
       </LinearGradient>
-      <Text style={[styles.tabLabel, { marginTop: 4 }]}>Scan</Text>
+      <Text numberOfLines={1} style={[styles.tabLabel, { marginTop: 4 }]}>{label}</Text>
     </View>
   );
 }
 
 export default function AppLayout() {
   const insets = useSafeAreaInsets();
+  const { t, language } = useTranslation();
   
   return (
     <Tabs
+      key={language}
       screenOptions={{
         headerShown: false,
         tabBarStyle: [styles.tabBar, { height: 60 + insets.bottom }],
@@ -60,7 +64,7 @@ export default function AppLayout() {
         name="home"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem name="home" label="Home" focused={focused} />
+            <TabItem name="home" label={t('tabs.home')} focused={focused} />
           ),
         }}
       />
@@ -68,21 +72,21 @@ export default function AppLayout() {
         name="crops"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem name="spa" label="Crops" focused={focused} />
+            <TabItem name="spa" label={t('tabs.crops')} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="scan"
         options={{
-          tabBarIcon: () => <ScanTabItem />,
+          tabBarIcon: () => <ScanTabItem label={t('tabs.scan')} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem name="calendar-today" label="Calendar" focused={focused} />
+            <TabItem name="calendar-today" label={t('tabs.calendar')} focused={focused} />
           ),
         }}
       />
@@ -90,7 +94,7 @@ export default function AppLayout() {
         name="assistant"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem name="auto-awesome" label="AI" focused={focused} />
+            <TabItem name="auto-awesome" label={t('tabs.ai')} focused={focused} />
           ),
         }}
       />
@@ -133,6 +137,7 @@ const styles = StyleSheet.create({
   scanItem: {
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 64,
     top: -16,
   },
   scanBtnOuter: {

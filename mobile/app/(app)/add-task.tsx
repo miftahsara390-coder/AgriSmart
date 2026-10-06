@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { COLORS } from '../../src/constants/theme';
 import { tasksAPI, cropsAPI } from '../../src/services/api';
+import { scheduleTaskReminder } from '../../src/services/notifications.service';
 
 const TASK_TYPES = [
   { id: 'Irrigation', icon: 'water-drop', label: 'Irrigation', defaultTitle: 'Drip Line Irrigation' },
@@ -38,23 +39,44 @@ const DEFAULT_CROPS = [
   'Citrus Orchard B',
 ];
 
+const TIMER_OPTIONS = [
+  { id: '10s', label: '10s (⚡ Test)', seconds: 10, hint: 'Fires in 10 seconds' },
+  { id: '1m', label: '1 min', seconds: 60, hint: 'Fires in 1 minute' },
+  { id: '5m', label: '5 min', seconds: 300, hint: 'Fires in 5 minutes' },
+  { id: '15m', label: '15 min', seconds: 900, hint: 'Fires 15 minutes before' },
+  { id: '30m', label: '30 min', seconds: 1800, hint: 'Fires 30 minutes before' },
+  { id: 'task', label: 'At Task Time', seconds: 0, hint: 'Fires at scheduled task time' },
+];
+
 export default function AddTaskScreen() {
   const insets = useSafeAreaInsets();
   const todayStr = new Date().toISOString().split('T')[0];
+
+  const getUpcomingTimeStr = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() + 30);
+    let h = d.getHours();
+    const m = d.getMinutes() < 30 ? '30' : '00';
+    if (d.getMinutes() >= 30) h = (h + 1) % 24;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = (h % 12 || 12).toString().padStart(2, '0');
+    return `${displayH}:${m} ${ampm}`;
+  };
 
   const [type, setType] = useState('Irrigation');
   const [title, setTitle] = useState('Drip Line Irrigation');
   const [cropField, setCropField] = useState('Tomato Field 1');
   const [date, setDate] = useState(todayStr);
-  const [time, setTime] = useState('08:00 AM');
+  const [time, setTime] = useState(getUpcomingTimeStr());
   const [reminder, setReminder] = useState(true);
+  const [selectedTimer, setSelectedTimer] = useState('10s');
   const [loading, setLoading] = useState(false);
   const [cropsList, setCropsList] = useState<string[]>(DEFAULT_CROPS);
 
   useEffect(() => {
     cropsAPI
       .getAll()
-      .then(res => {
+      .then((res) => {
         if (res.data?.crops && res.data.crops.length > 0) {
           const names = res.data.crops.map((c: any) => c.name + (c.location ? ` (${c.location})` : ''));
           setCropsList(Array.from(new Set([...names, ...DEFAULT_CROPS])));
@@ -65,7 +87,7 @@ export default function AddTaskScreen() {
 
   const handleSelectType = (typeId: string) => {
     setType(typeId);
-    const item = TASK_TYPES.find(t => t.id === typeId);
+    const item = TASK_TYPES.find((t) => t.id === typeId);
     if (item) {
       setTitle(item.defaultTitle);
     }
@@ -78,7 +100,7 @@ export default function AddTaskScreen() {
     }
     setLoading(true);
     try {
-      await tasksAPI.create({
+      const res = await tasksAPI.create({
         title: title.trim(),
         description: `Farm task for ${cropField}`,
         type,
@@ -87,6 +109,30 @@ export default function AddTaskScreen() {
         dueDate: date,
         time,
       });
+
+      if (reminder) {
+        const timerItem = TIMER_OPTIONS.find((t) => t.id === selectedTimer);
+        const delay = timerItem && timerItem.seconds > 0 ? timerItem.seconds : undefined;
+        await scheduleTaskReminder({
+          taskId: res.data?.task?.id,
+          title: title.trim(),
+          cropField,
+          dueDate: date,
+          time,
+          delaySeconds: delay,
+        });
+
+        const confirmMsg =
+          timerItem && timerItem.seconds > 0
+            ? `Notification timer set to fire in ${timerItem.label}!`
+            : `Notification scheduled for ${time}!`;
+
+        Alert.alert('Task Created 🎉', `"${title.trim()}" is now in Today's Tasks.\n\n${confirmMsg}`, [
+          { text: 'Great!', onPress: () => router.back() },
+        ]);
+        return;
+      }
+
       router.back();
     } catch (error) {
       console.error(error);
@@ -95,6 +141,8 @@ export default function AddTaskScreen() {
       setLoading(false);
     }
   };
+
+  const selectedTimerObj = TIMER_OPTIONS.find((t) => t.id === selectedTimer);
 
   return (
     <View style={styles.root}>
@@ -113,7 +161,7 @@ export default function AddTaskScreen() {
           {/* 1. Task Type */}
           <Text style={styles.label}>TASK TYPE</Text>
           <View style={styles.typeGrid}>
-            {TASK_TYPES.map(t => {
+            {TASK_TYPES.map((t) => {
               const active = type === t.id;
               return (
                 <TouchableOpacity
@@ -153,7 +201,7 @@ export default function AddTaskScreen() {
             onChangeText={setCropField}
           />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cropScroll}>
-            {cropsList.map(c => (
+            {cropsList.map((c) => (
               <TouchableOpacity
                 key={c}
                 style={[styles.cropBadge, cropField === c && styles.cropBadgeActive]}
@@ -182,7 +230,7 @@ export default function AddTaskScreen() {
               <Text style={styles.label}>TIME</Text>
               <TextInput
                 style={styles.input}
-                placeholder="08:00 AM"
+                placeholder="04:30 PM"
                 placeholderTextColor={COLORS.outline}
                 value={time}
                 onChangeText={setTime}
@@ -190,13 +238,15 @@ export default function AddTaskScreen() {
             </View>
           </View>
 
-          {/* 5. Optional Reminder */}
+          {/* 5. Optional Reminder & Timer */}
           <View style={styles.reminderCard}>
             <View style={styles.reminderLeft}>
               <MaterialIcons name="notifications-active" size={20} color="#15803d" />
               <View>
-                <Text style={styles.reminderTitle}>Task Reminder</Text>
-                <Text style={styles.reminderSub}>Notify 30 minutes before task</Text>
+                <Text style={styles.reminderTitle}>Task Reminder Notification</Text>
+                <Text style={styles.reminderSub}>
+                  {reminder ? (selectedTimerObj ? selectedTimerObj.hint : 'Timer active') : 'Disabled'}
+                </Text>
               </View>
             </View>
             <Switch
@@ -206,6 +256,46 @@ export default function AddTaskScreen() {
               thumbColor={reminder ? '#15803d' : '#f4f4f5'}
             />
           </View>
+
+          {/* 6. Notification Timer Selector */}
+          {reminder && (
+            <View style={styles.timerBox}>
+              <Text style={styles.timerBoxLabel}>REMINDER TIMER</Text>
+              <View style={styles.timerGrid}>
+                {TIMER_OPTIONS.map((opt) => {
+                  const isSelected = selectedTimer === opt.id;
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      style={[styles.timerPill, isSelected && styles.timerPillActive]}
+                      onPress={() => setSelectedTimer(opt.id)}
+                      activeOpacity={0.8}
+                    >
+                      <MaterialIcons
+                        name={opt.id === '10s' ? 'flash-on' : 'alarm'}
+                        size={14}
+                        color={isSelected ? '#ffffff' : '#15803d'}
+                      />
+                      <Text style={[styles.timerPillText, isSelected && styles.timerPillTextActive]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.timerNotice}>
+                <MaterialIcons name="info-outline" size={16} color="#15803d" />
+                <Text style={styles.timerNoticeText}>
+                  {selectedTimer === '10s'
+                    ? '⚡ Quick Test: Expo notification banner will fire 10 seconds after saving.'
+                    : selectedTimer === 'task'
+                    ? `🔔 Reminder will fire at scheduled time (${time}).`
+                    : `⏱️ Notification will alert you in ${selectedTimerObj?.label}.`}
+                </Text>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -234,12 +324,30 @@ export default function AddTaskScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.surface },
-  safe: { backgroundColor: 'rgba(241, 252, 242, 0.95)', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16, paddingTop: 4 },
+  safe: {
+    backgroundColor: 'rgba(241, 252, 242, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 4,
+  },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.onSurface },
   content: { padding: 20, paddingBottom: 40 },
-  label: { fontSize: 11, fontWeight: '700', color: '#406653', letterSpacing: 0.8, marginBottom: 8, marginTop: 14 },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#406653',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginTop: 14,
+  },
   input: {
     backgroundColor: COLORS.surfaceContainerLowest,
     borderWidth: 1,
@@ -279,6 +387,7 @@ const styles = StyleSheet.create({
   cropBadgeText: { color: '#406653', fontWeight: '600', fontSize: 12 },
   cropBadgeTextActive: { color: '#15803d' },
   formRow: { flexDirection: 'row', gap: 12 },
+
   reminderCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -290,10 +399,76 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(6, 95, 70, 0.08)',
     marginTop: 18,
   },
-  reminderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  reminderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   reminderTitle: { fontSize: 13, fontWeight: '700', color: COLORS.onSurface },
-  reminderSub: { fontSize: 11, color: '#657168' },
-  footer: { padding: 20, paddingBottom: 24, backgroundColor: COLORS.surfaceContainerLowest, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)' },
+  reminderSub: { fontSize: 11, color: '#657168', marginTop: 2 },
+
+  timerBox: {
+    backgroundColor: 'rgba(21, 128, 61, 0.04)',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(21, 128, 61, 0.15)',
+  },
+  timerBoxLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#15803d',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  timerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  timerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(21, 128, 61, 0.2)',
+  },
+  timerPillActive: {
+    backgroundColor: '#15803d',
+    borderColor: '#15803d',
+  },
+  timerPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#15803d',
+  },
+  timerPillTextActive: {
+    color: '#ffffff',
+  },
+  timerNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(21, 128, 61, 0.1)',
+  },
+  timerNoticeText: {
+    fontSize: 11.5,
+    color: '#166534',
+    flex: 1,
+    lineHeight: 16,
+  },
+
+  footer: {
+    padding: 20,
+    paddingBottom: 24,
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+  },
   saveBtn: { borderRadius: 14, overflow: 'hidden' },
   saveBtnInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, gap: 8 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },

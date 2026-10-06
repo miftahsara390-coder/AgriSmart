@@ -14,6 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { cropsAPI } from '../../src/services/api';
+import { useTranslation } from '../../src/stores/language.store';
 
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
@@ -59,6 +60,7 @@ const INITIAL_CROPS = [
 ];
 
 export default function CropsScreen() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [crops, setCrops] = useState<any[]>([]);
@@ -88,9 +90,7 @@ export default function CropsScreen() {
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <Header title="Crops" style={{ backgroundColor: 'transparent' }} />
-      </SafeAreaView>
+      <Header title={t('crops.title')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Search */}
@@ -98,7 +98,7 @@ export default function CropsScreen() {
           <MaterialIcons name="search" size={20} color={COLORS.outline} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search crops, fields, varieties..."
+            placeholder={t('crops.searchPlaceholder')}
             placeholderTextColor={COLORS.outline}
             value={search}
             onChangeText={setSearch}
@@ -116,21 +116,27 @@ export default function CropsScreen() {
             style={[styles.chip, filter === 'all' && styles.chipActive]}
             onPress={() => setFilter('all')}
           >
-            <Text style={[styles.chipText, filter === 'all' && styles.chipTextActive]}>All Crops ({crops.length})</Text>
+            <Text style={[styles.chipText, filter === 'all' && styles.chipTextActive]}>
+              {t('crops.allCrops')} ({crops.length})
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.chip, filter === 'healthy' && styles.chipActive]}
             onPress={() => setFilter('healthy')}
           >
             <View style={[styles.chipDot, { backgroundColor: '#22c55e' }]} />
-            <Text style={[styles.chipText, filter === 'healthy' && styles.chipTextActive]}>Healthy ({crops.filter(c => c.status === 'healthy').length})</Text>
+            <Text style={[styles.chipText, filter === 'healthy' && styles.chipTextActive]}>
+              {t('crops.healthy')} ({crops.filter(c => c.status === 'healthy').length})
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.chip, filter === 'attention' && styles.chipActive]}
             onPress={() => setFilter('attention')}
           >
             <View style={[styles.chipDot, { backgroundColor: '#fbbf24' }]} />
-            <Text style={[styles.chipText, filter === 'attention' && styles.chipTextActive]}>Needs Attention ({crops.filter(c => c.status === 'attention').length})</Text>
+            <Text style={[styles.chipText, filter === 'attention' && styles.chipTextActive]}>
+              {t('crops.needsAttention')} ({crops.filter(c => c.status === 'attention').length})
+            </Text>
           </TouchableOpacity>
         </ScrollView>
 
@@ -141,8 +147,8 @@ export default function CropsScreen() {
               <View style={styles.emptyIconWrap}>
                 <MaterialIcons name="filter-list-off" size={32} color={COLORS.outline} />
               </View>
-              <Text style={styles.emptyTitle}>No crops found</Text>
-              <Text style={styles.emptySub}>Try adjusting your search terms or filter selection to view parcels.</Text>
+              <Text style={styles.emptyTitle}>{t('crops.noCropsFound')}</Text>
+              <Text style={styles.emptySub}>{t('crops.noCropsSub')}</Text>
             </View>
           ) : (
             filteredCrops.map((crop: any) => (
@@ -158,11 +164,11 @@ export default function CropsScreen() {
           </View>
           <View style={styles.aiBannerContent}>
             <View style={styles.aiBannerHeader}>
-              <Text style={styles.aiBannerTitle}>AGRONOMY TELEMETRY</Text>
-              <Text style={styles.aiBannerTime}>Just now</Text>
+              <Text style={styles.aiBannerTitle}>{t('crops.telemetryTitle')}</Text>
+              <Text style={styles.aiBannerTime}>{t('common.justNow')}</Text>
             </View>
             <Text style={styles.aiBannerText}>
-              Mild evapotranspiration forecast today across <Text style={{fontWeight: '600', color: '#4ade80'}}>Field A</Text>. Recommended moisture threshold: <Text style={{fontWeight: '600', color: '#fff'}}>62%</Text>.
+              {t('crops.telemetryBody')}
             </Text>
           </View>
         </View>
@@ -175,7 +181,7 @@ export default function CropsScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.fabBtnInner}
           >
-            <Text style={styles.fabBtnText}>Add Crop</Text>
+            <Text style={styles.fabBtnText}>{t('crops.addCrop')}</Text>
             <View style={styles.fabBtnIcon}>
               <MaterialIcons name="add" size={18} color="#15803d" />
             </View>

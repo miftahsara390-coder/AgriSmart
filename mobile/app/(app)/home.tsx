@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  RefreshControl,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { homeAPI, tasksAPI } from '../../src/services/api';
 import { useAuthStore } from '../../src/stores/auth.store';
+import { useTranslation } from '../../src/stores/language.store';
 
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
@@ -24,16 +26,21 @@ import CropCard, { Crop } from '../../src/components/CropCard';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   const [data, setData] = useState<{
     weather: any;
     todayTasks: any[];
     crops: any[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  React.useEffect(() => {
-    fetchDashboard();
-  }, []);
+  // Automatically refresh tasks and dashboard every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboard();
+    }, [])
+  );
 
   const fetchDashboard = async () => {
     try {
@@ -43,7 +50,13 @@ export default function HomeScreen() {
       console.error('Failed to fetch dashboard', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDashboard();
   };
 
   const toggleTask = async (id: string | number) => {
@@ -81,13 +94,24 @@ export default function HomeScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       
-      <Header title="Home" />
+      <Header title={t('tabs.home')} />
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#15803d']}
+            tintColor="#15803d"
+          />
+        }
+      >
         {/* Greeting */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greetingSub}>YOUR FARM TODAY</Text>
-          <Text style={styles.greetingMain}>Good morning, {user?.name?.split(' ')[0] || 'Farmer'}</Text>
+          <Text style={styles.greetingSub}>{t('home.yourFarmToday')}</Text>
+          <Text style={styles.greetingMain}>{t('home.greetingMorning')}, {user?.name?.split(' ')[0] || 'Farmer'}</Text>
         </View>
 
         {/* Weather Card */}
@@ -109,7 +133,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.weatherDescRow}>
                 <View style={styles.weatherDot} />
-                <Text style={styles.weatherDescText}>{weather?.condition || 'Sunny'} · <Text style={{color: '#10b981', fontWeight: '600'}}>Optimal moisture</Text></Text>
+                <Text style={styles.weatherDescText}>{weather?.condition || 'Sunny'} · <Text style={{color: '#10b981', fontWeight: '600'}}>{t('home.optimalMoisture')}</Text></Text>
               </View>
             </View>
             <View style={styles.weatherIconWrap}>
@@ -120,25 +144,43 @@ export default function HomeScreen() {
 
         {/* Today's Tasks */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Today's Tasks</Text>
-          <View style={[styles.taskBadge, remainingCount === 0 && styles.taskBadgeDone]}>
-            <Text style={[styles.taskBadgeText, remainingCount === 0 && styles.taskBadgeTextDone]}>
-              {remainingCount === 0 ? 'All done! 🎉' : `${remainingCount} task${remainingCount === 1 ? '' : 's'} left`}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.sectionTitle}>{t('home.todayTasks')}</Text>
+            <View style={[styles.taskBadge, remainingCount === 0 && styles.taskBadgeDone]}>
+              <Text style={[styles.taskBadgeText, remainingCount === 0 && styles.taskBadgeTextDone]}>
+                {remainingCount === 0 ? 'All done! 🎉' : `${remainingCount} ${t('home.tasksLeft')}`}
+              </Text>
+            </View>
           </View>
+          <TouchableOpacity
+            style={styles.addTaskBtn}
+            onPress={() => router.push('/(app)/add-task')}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="add" size={16} color="#15803d" />
+            <Text style={styles.addTaskBtnText}>{t('home.newTask')}</Text>
+          </TouchableOpacity>
         </View>
         
         <View style={styles.tasksContainer}>
-          {tasks.map((task: any) => (
-            <TaskCard key={task.id} task={task} onToggle={toggleTask} variant="home" />
-          ))}
+          {tasks.length === 0 ? (
+            <View style={styles.emptyTasksCard}>
+              <MaterialIcons name="event-available" size={32} color="#15803d" />
+              <Text style={styles.emptyTasksTitle}>{t('home.noTasksScheduled')}</Text>
+              <Text style={styles.emptyTasksSub}>{t('home.createTaskHint')}</Text>
+            </View>
+          ) : (
+            tasks.map((task: any) => (
+              <TaskCard key={task.id} task={task} onToggle={toggleTask} variant="home" />
+            ))
+          )}
         </View>
 
         {/* My Crops */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My crops</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAllText}>View all</Text>
+          <Text style={styles.sectionTitle}>{t('home.myCrops')}</Text>
+          <TouchableOpacity onPress={() => router.push('/(app)/crops')}>
+            <Text style={styles.viewAllText}>{t('home.viewAll')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -151,31 +193,40 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* AI Assistant */}
-        <LinearGradient
-          colors={['#0d2a1c', '#16422f', '#113825']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.aiCard}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push('/(app)/assistant')}
         >
-          <View style={styles.aiLeft}>
-            <View style={styles.aiIconWrap}>
-              <MaterialIcons name="auto-awesome" size={20} color="#4ade80" />
+          <LinearGradient
+            colors={['#0d2a1c', '#16422f', '#113825']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.aiCard}
+          >
+            <View style={styles.aiLeft}>
+              <View style={styles.aiIconWrap}>
+                <MaterialIcons name="auto-awesome" size={20} color="#4ade80" />
+              </View>
+              <View style={styles.aiTextWrap}>
+                <Text style={styles.aiTitle}>Need help with your farm?</Text>
+                <Text style={styles.aiSub}>Ask advice on irrigation or pests</Text>
+              </View>
             </View>
-            <View style={styles.aiTextWrap}>
-              <Text style={styles.aiTitle}>Need help with your farm?</Text>
-              <Text style={styles.aiSub}>Ask advice on irrigation or pests</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.aiBtnOuter} activeOpacity={0.8}>
-            <LinearGradient
-              colors={['#22c55e', '#16a34a']}
-              style={styles.aiBtnInner}
+            <TouchableOpacity
+              style={styles.aiBtnOuter}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(app)/assistant')}
             >
-              <Text style={styles.aiBtnText}>Ask AgriSmart</Text>
-              <MaterialIcons name="arrow-forward" size={16} color="#fff" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </LinearGradient>
+              <LinearGradient
+                colors={['#22c55e', '#16a34a']}
+                style={styles.aiBtnInner}
+              >
+                <Text style={styles.aiBtnText}>Ask AgriSmart</Text>
+                <MaterialIcons name="arrow-forward" size={16} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -328,6 +379,43 @@ const styles = StyleSheet.create({
   },
   taskBadgeTextDone: {
     color: COLORS.onPrimary,
+  },
+  addTaskBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(21, 128, 61, 0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(21, 128, 61, 0.2)',
+  },
+  addTaskBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803d',
+  },
+  emptyTasksCard: {
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  emptyTasksTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.onSurface,
+    marginTop: 4,
+  },
+  emptyTasksSub: {
+    fontSize: 12,
+    color: COLORS.outline,
+    textAlign: 'center',
   },
   tasksContainer: {
     gap: 8,

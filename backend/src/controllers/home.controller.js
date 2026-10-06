@@ -21,15 +21,22 @@ const getHomeDashboard = async (req, res, next) => {
           ],
         },
         include: [{ model: Crop, attributes: ['id', 'name', 'location'] }],
-        order: [['time', 'ASC'], ['createdAt', 'ASC']],
-        limit: 5,
+        order: [
+          ['status', 'ASC'], // pending tasks first
+          ['createdAt', 'DESC'], // newest added tasks at the top
+        ],
+        limit: 30,
       }).then(async (tasks) => {
         if (tasks.length > 0) return tasks;
         return Task.findAll({
           where: { userId },
           include: [{ model: Crop, attributes: ['id', 'name', 'location'] }],
-          order: [['date', 'ASC'], ['time', 'ASC'], ['createdAt', 'ASC']],
-          limit: 5,
+          order: [
+            ['status', 'ASC'],
+            ['date', 'DESC'],
+            ['createdAt', 'DESC'],
+          ],
+          limit: 30,
         });
       }),
       Crop.findAll({

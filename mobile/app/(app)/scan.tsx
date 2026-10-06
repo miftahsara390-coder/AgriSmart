@@ -7,9 +7,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { scanAPI } from '../../src/services/api';
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from '../../src/stores/language.store';
 
 export default function ScanScreen() {
+  const { t } = useTranslation();
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -17,7 +18,7 @@ export default function ScanScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera roll access');
+      Alert.alert(t('scan.permissionNeeded'), t('scan.permissionMsg'));
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -35,7 +36,7 @@ export default function ScanScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera access');
+      Alert.alert(t('scan.permissionNeeded'), t('scan.permissionMsg'));
       return;
     }
     const res = await ImagePicker.launchCameraAsync({
@@ -56,33 +57,31 @@ export default function ScanScreen() {
       const res = await scanAPI.scan(image);
       setResult(res.data);
     } catch (err: any) {
-      Alert.alert('Scan Failed', err.response?.data?.error || 'Something went wrong');
+      Alert.alert(t('scan.scanFailed'), err.response?.data?.error || t('common.error'));
     } finally {
       setLoading(false);
     }
   };
   return (
     <View style={styles.root}>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <Header title="Scan Plant" style={{ backgroundColor: 'transparent' }} />
-      </SafeAreaView>
+      <Header title={t('scan.title')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>Detect diseases and get agricultural advice</Text>
+        <Text style={styles.subtitle}>{t('scan.subtitle')}</Text>
 
       <View style={styles.imageBox}>
         {image ? (
           <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
         ) : (
-          <Text style={styles.imagePlaceholder}>No image selected</Text>
+          <Text style={styles.imagePlaceholder}>{t('scan.noImageSelected')}</Text>
         )}
       </View>
 
       <View style={styles.btnRow}>
         <TouchableOpacity style={styles.btn} onPress={takePhoto}>
-          <Text style={styles.btnText}>📷 Camera</Text>
+          <Text style={styles.btnText}>{t('scan.camera')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.btn} onPress={pickImage}>
-          <Text style={styles.btnText}>🖼️ Gallery</Text>
+          <Text style={styles.btnText}>{t('scan.gallery')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -91,26 +90,26 @@ export default function ScanScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.scanBtnText}>🔍 Analyze Plant</Text>
+            <Text style={styles.scanBtnText}>{t('scan.analyzePlant')}</Text>
           )}
         </TouchableOpacity>
       )}
 
       {result && (
         <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>🔬 Diagnosis Result</Text>
+          <Text style={styles.resultTitle}>{t('scan.resultTitle')}</Text>
           {result.diagnosis?.plant && (
-            <Text style={styles.resultRow}>🌿 Plant: {result.diagnosis.plant}</Text>
+            <Text style={styles.resultRow}>{t('scan.plant')}: {result.diagnosis.plant}</Text>
           )}
           {result.diagnosis?.problem && (
-            <Text style={styles.resultRow}>⚠️ Problem: {result.diagnosis.problem}</Text>
+            <Text style={styles.resultRow}>{t('scan.problem')}: {result.diagnosis.problem}</Text>
           )}
           {result.diagnosis?.confidence && (
-            <Text style={styles.resultRow}>📊 Confidence: {result.diagnosis.confidence}</Text>
+            <Text style={styles.resultRow}>{t('scan.confidence')}: {result.diagnosis.confidence}</Text>
           )}
           {result.diagnosis?.recommendations && (
             <>
-              <Text style={styles.resultSubtitle}>💡 Recommendations:</Text>
+              <Text style={styles.resultSubtitle}>{t('scan.recommendations')}:</Text>
               <Text style={styles.resultText}>{result.diagnosis.recommendations}</Text>
             </>
           )}

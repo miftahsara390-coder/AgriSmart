@@ -1,5 +1,6 @@
 const fs = require('fs');
 const Scan = require('../models/Scan');
+const { generateWithGeminiFallback } = require('../ai/agent');
 
 // POST /api/scans
 const scanPlant = async (req, res, next) => {
@@ -24,8 +25,7 @@ const scanPlant = async (req, res, next) => {
         const { GoogleGenAI } = require('@google/genai');
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-        const response = await ai.models.generateContent({
-          model: process.env.AI_MODEL || 'gemini-3.8-flash',
+        const result = await generateWithGeminiFallback(ai, {
           contents: [
             {
               role: 'user',
@@ -49,7 +49,7 @@ Analyze the image and respond ONLY with valid JSON in this exact format:
           }
         });
 
-        const content = response.text || '{}';
+        const content = result.text || '{}';
         const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || [null, content];
         diagnosis = JSON.parse(jsonMatch[1]);
       } catch (aiErr) {

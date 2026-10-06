@@ -21,6 +21,7 @@ import { tasksAPI, cropsAPI } from '../../src/services/api';
 
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
+import { useTranslation } from '../../src/stores/language.store';
 
 export type TaskType =
   | 'Irrigation'
@@ -107,6 +108,7 @@ const DEFAULT_CROPS = [
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
+  const { t, language } = useTranslation();
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -137,17 +139,19 @@ export default function CalendarScreen() {
   const dateStrip = useMemo(() => {
     const list = [];
     const base = new Date();
+    const frDays = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const enDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     for (let i = -2; i <= 9; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
       const iso = d.toISOString().split('T')[0];
-      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayName = language === 'fr' ? frDays[d.getDay()] : enDays[d.getDay()];
       const dayNum = d.getDate().toString();
       const isToday = iso === todayStr;
       list.push({ iso, dayName, dayNum, isToday });
     }
     return list;
-  }, [todayStr]);
+  }, [todayStr, language]);
 
   // Load backend tasks & backend recommendation on mount & when date changes
   useEffect(() => {
@@ -339,8 +343,8 @@ export default function CalendarScreen() {
       <StatusBar style="dark" />
 
       {/* ── Fixed Header & Date Selector ─────────────────────────────────────── */}
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <Header title="Calendar" style={{ backgroundColor: 'transparent' }} />
+      <View style={styles.topHeaderArea}>
+        <Header title={t('calendar.title')} style={{ backgroundColor: 'transparent' }} />
 
         {/* Horizontal Date Selector */}
         <View style={styles.dateSelectorWrap}>
@@ -371,7 +375,7 @@ export default function CalendarScreen() {
             })}
           </ScrollView>
         </View>
-      </SafeAreaView>
+      </View>
 
       {/* ── Scrollable Body ──────────────────────────────────────────────────── */}
       <ScrollView
@@ -387,9 +391,9 @@ export default function CalendarScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.aiRecTitleRow}>
-                  <Text style={styles.aiRecTitle}>Smart Planning Advisory</Text>
+                  <Text style={styles.aiRecTitle}>{t('calendar.smartPlanning')}</Text>
                   <View style={styles.aiRecPill}>
-                    <Text style={styles.aiRecPillText}>RECOMMENDED</Text>
+                    <Text style={styles.aiRecPillText}>{t('calendar.recommendedBadge')}</Text>
                   </View>
                 </View>
                 <Text style={styles.aiRecBody}>{aiRec.recommendation}</Text>
@@ -410,7 +414,7 @@ export default function CalendarScreen() {
                   activeOpacity={0.85}
                 >
                   <MaterialIcons name="add-task" size={16} color="#fff" />
-                  <Text style={styles.aiAddBtnText}>Add to Schedule (Backend)</Text>
+                  <Text style={styles.aiAddBtnText}>Add to Schedule</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -422,7 +426,7 @@ export default function CalendarScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.aiRecActionText}>
-                  {aiRecExpanded ? 'Hide details' : 'View recommendation'}
+                  {aiRecExpanded ? t('calendar.hideDetails') : t('calendar.viewRecommendation')}
                 </Text>
                 <MaterialIcons
                   name={aiRecExpanded ? 'expand-less' : 'chevron-right'}
@@ -434,7 +438,7 @@ export default function CalendarScreen() {
                 onPress={() => setAiRecDismissed(true)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={styles.aiDismissText}>Dismiss</Text>
+                <Text style={styles.aiDismissText}>{t('calendar.dismiss')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -445,13 +449,13 @@ export default function CalendarScreen() {
           <View>
             <Text style={styles.scheduleTitle}>
               {isToday
-                ? "Today's Schedule"
-                : `Schedule for ${new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                ? t('calendar.todaySchedule')
+                : `Schedule for ${new Date(selectedDate + 'T12:00:00').toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' })}`}
             </Text>
             <Text style={styles.scheduleSubtitle}>
               {tasks.length > 0
-                ? `${pendingCount} pending • ${doneCount} completed`
-                : 'No operations currently booked'}
+                ? `${pendingCount} ${t('calendar.pending')} • ${doneCount} ${t('calendar.completed')}`
+                : t('calendar.noTasksForDay')}
             </Text>
           </View>
 
@@ -551,7 +555,7 @@ export default function CalendarScreen() {
                           activeOpacity={0.8}
                         >
                           <MaterialIcons name="check-circle" size={16} color="#15803d" />
-                          <Text style={styles.donePillText}>Done</Text>
+                          <Text style={styles.donePillText}>{t('common.done')}</Text>
                         </TouchableOpacity>
                       ) : (
                         <TouchableOpacity
@@ -560,7 +564,7 @@ export default function CalendarScreen() {
                           activeOpacity={0.85}
                         >
                           <MaterialIcons name="check" size={15} color="#ffffff" />
-                          <Text style={styles.markDoneBtnText}>Mark as Done</Text>
+                          <Text style={styles.markDoneBtnText}>{t('calendar.markDone')}</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -768,7 +772,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.surface,
   },
-  safe: {
+  topHeaderArea: {
     backgroundColor: 'rgba(241, 252, 242, 0.95)',
     zIndex: 10,
     borderBottomWidth: 1,
