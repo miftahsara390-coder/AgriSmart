@@ -1,6 +1,6 @@
 const fs = require('fs');
 const Scan = require('../models/Scan');
-const { generateWithGeminiFallback } = require('../ai/agent');
+const { generateWithDeepSeekFallback } = require('../ai/agent');
 
 // POST /api/scans
 const scanPlant = async (req, res, next) => {
@@ -12,31 +12,22 @@ const scanPlant = async (req, res, next) => {
     const imagePath = req.file.path;
     const imageUrl = `/uploads/${req.file.filename}`;
 
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    const hasValidKey = GEMINI_API_KEY &&
-      !GEMINI_API_KEY.startsWith('your-');
+    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY;
+    const hasValidKey = DEEPSEEK_API_KEY &&
+      !DEEPSEEK_API_KEY.startsWith('your-');
 
     let diagnosis;
 
     if (hasValidKey) {
       try {
         const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
-        const mimeType = req.file.mimetype;
-        const { GoogleGenAI } = require('@google/genai');
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        const mimeType = req.file.mimetype || 'image/jpeg';
+        const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-        const result = await generateWithGeminiFallback(ai, {
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: 'Analyze this plant image.' },
-                { inlineData: { data: imageBase64, mimeType } }
-              ]
-            }
-          ],
-          config: {
-            systemInstruction: `You are an agricultural AI assistant specialized in plant disease diagnosis.
+        const messages = [
+          {
+            role: 'system',
+            content: `You are an agricultural AI assistant specialized in plant disease diagnosis.
 Analyze the image and respond ONLY with valid JSON in this exact format:
 {
   "plant": "plant name",
@@ -46,18 +37,31 @@ Analyze the image and respond ONLY with valid JSON in this exact format:
   "advice": "brief general advice",
   "treatment": "specific treatment recommendation"
 }`,
-          }
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Analyze this plant image.' },
+              { type: 'image_url', image_url: { url: dataUrl } },
+            ],
+          },
+        ];
+
+        const result = await generateWithDeepSeekFallback({
+          messages,
+          candidateModels: ['deepseek-flash', 'deepseek-chat'],
+          temperature: 0.2,
         });
 
         const content = result.text || '{}';
-        const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || [null, content];
-        diagnosis = JSON.parse(jsonMatch[1]);
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
+        diagnosis = JSON.parse((jsonMatch[1] || content).trim());
       } catch (aiErr) {
-        console.warn('AI scan error:', aiErr.message);
+        console.warn('DeepSeek AI scan error:', aiErr.message);
         diagnosis = buildFallbackDiagnosis();
       }
     } else {
-      console.log('No valid AI API key — returning development scan fallback');
+      console.log('No valid DeepSeek API key — returning development scan fallback');
       diagnosis = buildFallbackDiagnosis();
     }
 

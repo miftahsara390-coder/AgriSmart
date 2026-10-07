@@ -52,8 +52,8 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: 'welcome-1',
     role: 'assistant',
-    text: "Hello! I am your AgriSmart Assistant powered by Google Gemini. I analyze your crop telemetry, field soil status, and agricultural questions. Ask me anything or attach a photo of your crops to diagnose issues!",
-    model: 'Gemini AI',
+    text: "Hello! I am your AgriSmart Assistant powered by DeepSeek AI. I analyze your crop telemetry, field soil status, and agricultural questions. Ask me anything or attach a photo of your crops to diagnose issues!",
+    model: 'DeepSeek AI',
     timestamp: 'Just now',
   },
 ];
@@ -132,7 +132,7 @@ export default function AssistantScreen() {
               id: `ai-${c.id}`,
               role: 'assistant',
               text: c.response,
-              model: 'Gemini AI',
+              model: 'DeepSeek AI',
               timestamp: dateStr,
             });
           }
@@ -272,7 +272,7 @@ export default function AssistantScreen() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         text: res.data?.response || 'I have analyzed your request.',
-        model: res.data?.model || 'Gemini AI',
+        model: res.data?.model || 'DeepSeek AI',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages(prev => [...prev, aiMsg]);
@@ -281,8 +281,8 @@ export default function AssistantScreen() {
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: 'Sorry, I encountered an issue connecting to the Gemini API. Please verify your connection and try again.',
-        model: 'Gemini AI',
+        text: 'Sorry, I encountered an issue connecting to the DeepSeek API. Please verify your connection and try again.',
+        model: 'DeepSeek AI',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -397,11 +397,11 @@ export default function AssistantScreen() {
 
           {/* Subheader Status Badges */}
           <View style={styles.subHeader}>
-            <View style={styles.geminiBadge}>
+            <View style={styles.deepseekBadge}>
               <View style={styles.statusDot} />
               <MaterialIcons name="auto-awesome" size={13} color="#15803d" style={{ marginRight: 4 }} />
-              <Text style={styles.geminiBadgeText}>
-                {isSmallPhone ? 'Gemini AI' : 'Powered by Google Gemini'}
+              <Text style={styles.deepseekBadgeText}>
+                {isSmallPhone ? 'DeepSeek AI' : 'Powered by DeepSeek'}
               </Text>
             </View>
 
@@ -443,7 +443,7 @@ export default function AssistantScreen() {
               <View style={styles.contextBanner}>
                 <MaterialIcons name="insights" size={15} color="#15803d" style={styles.contextIcon} />
                 <Text style={[styles.contextText, isSmallPhone && { fontSize: 10 }]}>
-                  Gemini AI is synced with your farm crops & soil telemetry.
+                  DeepSeek AI is synced with your farm crops & soil telemetry.
                 </Text>
               </View>
             )}
@@ -493,7 +493,7 @@ export default function AssistantScreen() {
                           <Text style={styles.aiHeaderTitle}>AgriSmart AI</Text>
                         </View>
                         <View style={styles.aiModelTag}>
-                          <Text style={styles.aiModelTagText}>Gemini</Text>
+                          <Text style={styles.aiModelTagText}>DeepSeek</Text>
                         </View>
                       </View>
 
@@ -519,7 +519,7 @@ export default function AssistantScreen() {
               <View style={styles.aiBubbleWrap}>
                 <View style={styles.thinkingBubble}>
                   <ActivityIndicator size="small" color="#15803d" />
-                  <Text style={styles.thinkingText}>Gemini is analyzing...</Text>
+                  <Text style={styles.thinkingText}>DeepSeek is analyzing...</Text>
                 </View>
               </View>
             )}
@@ -564,7 +564,7 @@ export default function AssistantScreen() {
                     {language === 'fr' ? 'Photo de plante jointe' : 'Attached Plant Photo'}
                   </Text>
                   <Text style={styles.previewSub}>
-                    {language === 'fr' ? 'Gemini analysera cette image' : 'Gemini will analyze this photo'}
+                    {language === 'fr' ? 'DeepSeek analysera cette image' : 'DeepSeek will analyze this photo'}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
-  geminiBadge: {
+  deepseekBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(21, 128, 61, 0.08)',
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#22c55e',
     marginRight: 6,
   },
-  geminiBadgeText: {
+  deepseekBadgeText: {
     fontSize: 11,
     fontWeight: '600',
     color: '#15803d',

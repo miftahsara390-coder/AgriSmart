@@ -32,7 +32,7 @@ const chat = async (req, res, next) => {
     res.json({
       response: agentResponse.content,
       conversationId,
-      model: agentResponse.model || 'gemini',
+      model: agentResponse.model || 'deepseek',
     });
   } catch (error) {
     next(error);
