@@ -19,7 +19,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { agentAPI } from '../../src/services/api';
+import {
+  useAgentHistoryQuery,
+  useSendAgentChatMutation,
+  useClearAgentHistoryMutation,
+} from '../../src/services/agent';
 
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
@@ -106,45 +110,40 @@ export default function AssistantScreen() {
     };
   }, []);
 
+  const { data: historyData } = useAgentHistoryQuery();
+  const sendChatMutation = useSendAgentChatMutation();
+  const clearHistoryMutation = useClearAgentHistoryMutation();
+
   // Load chat history from backend on screen load
   useEffect(() => {
-    loadChatHistory();
-  }, []);
-
-  const loadChatHistory = async () => {
-    try {
-      const res = await agentAPI.getHistory();
-      const convos = res.data?.conversations;
-      if (Array.isArray(convos) && convos.length > 0) {
-        const historyMessages: Message[] = [];
-        convos.forEach((c: any) => {
-          const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined;
-          if (c.message) {
-            historyMessages.push({
-              id: `user-${c.id}`,
-              role: 'user',
-              text: c.message,
-              timestamp: dateStr,
-            });
-          }
-          if (c.response) {
-            historyMessages.push({
-              id: `ai-${c.id}`,
-              role: 'assistant',
-              text: c.response,
-              model: 'DeepSeek AI',
-              timestamp: dateStr,
-            });
-          }
-        });
-        if (historyMessages.length > 0) {
-          setMessages(historyMessages);
+    const convos = historyData?.conversations;
+    if (Array.isArray(convos) && convos.length > 0) {
+      const historyMessages: Message[] = [];
+      convos.forEach((c: any) => {
+        const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined;
+        if (c.message) {
+          historyMessages.push({
+            id: `user-${c.id}`,
+            role: 'user',
+            text: c.message,
+            timestamp: dateStr,
+          });
         }
+        if (c.response) {
+          historyMessages.push({
+            id: `ai-${c.id}`,
+            role: 'assistant',
+            text: c.response,
+            model: 'DeepSeek AI',
+            timestamp: dateStr,
+          });
+        }
+      });
+      if (historyMessages.length > 0) {
+        setMessages(historyMessages);
       }
-    } catch (err) {
-      console.warn('Could not load chat history:', err);
     }
-  };
+  }, [historyData]);
 
   const handleClearHistory = () => {
     Alert.alert(
@@ -157,7 +156,7 @@ export default function AssistantScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await agentAPI.clearHistory();
+              await clearHistoryMutation.mutateAsync();
               setMessages(INITIAL_MESSAGES);
             } catch (err) {
               setMessages(INITIAL_MESSAGES);
@@ -261,18 +260,18 @@ export default function AssistantScreen() {
         ? `[Langue: Français - Réponds en français] ${text || 'Veuillez examiner cette image et fournir des conseils agronomiques.'}`
         : (text || 'Please inspect this plant image and provide agronomic advice.');
 
-      const res = await agentAPI.chat(
-        queryToSend,
+      const res = await sendChatMutation.mutateAsync({
+        message: queryToSend,
         history,
-        currentImage?.base64,
-        currentImage?.mimeType
-      );
+        image: currentImage?.base64,
+        mimeType: currentImage?.mimeType,
+      });
 
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: res.data?.response || 'I have analyzed your request.',
-        model: res.data?.model || 'DeepSeek AI',
+        text: res?.response || 'I have analyzed your request.',
+        model: res?.model || 'DeepSeek AI',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages(prev => [...prev, aiMsg]);

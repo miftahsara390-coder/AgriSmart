@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 const SensorData = sequelize.define('SensorData', {
   id: {
@@ -33,4 +33,5 @@ const SensorData = sequelize.define('SensorData', {
   tableName: 'sensor_data',
 });
 
-module.exports = SensorData;
+export { SensorData };
+export default SensorData;

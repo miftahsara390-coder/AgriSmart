@@ -1,5 +1,5 @@
-const { Sequelize } = require('sequelize');
-require('dotenv').config();
+import { Sequelize } from 'sequelize';
+import 'dotenv/config';
 
 const requiredEnvVars = [
   'DB_NAME',
@@ -19,7 +19,6 @@ if (missingVars.length > 0) {
   );
   process.exit(1);
 }
-
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -86,7 +85,5 @@ const connectDB = async () => {
   }
 };
 
-module.exports = {
-  sequelize,
-  connectDB,
-};
+export { sequelize, connectDB };
+export default sequelize;

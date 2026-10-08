@@ -1,7 +1,7 @@
-const { Op } = require('sequelize');
-const Task = require('../models/Task');
-const Crop = require('../models/Crop');
-const { getWeather } = require('../services/weather.service');
+import { Op } from 'sequelize';
+import Task from '../models/Task.js';
+import Crop from '../models/Crop.js';
+import { getWeather } from '../services/weather.service.js';
 
 // GET /api/home
 const getHomeDashboard = async (req, res, next) => {
@@ -57,4 +57,5 @@ const getHomeDashboard = async (req, res, next) => {
   }
 };
 
-module.exports = { getHomeDashboard };
+export { getHomeDashboard };
+export default { getHomeDashboard };

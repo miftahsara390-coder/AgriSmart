@@ -1,112 +1,66 @@
-import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
+import apiClient from './client';
 
-// On Android emulator, localhost = the emulator itself, not the host machine.
-// Use 10.0.2.2 to reach the host machine from an Android emulator.
-const BASE_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${BASE_HOST}:5000/api`;
-
-const api = axios.create({
-  baseURL: API_URL,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-// ─── Request interceptor — attach access token ───────────────────────────────
-api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// ─── Response interceptor — handle 401 ───────────────────────────────────────
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid — clean up local storage
-      await SecureStore.deleteItemAsync('accessToken');
-    }
-    return Promise.reject(error);
-  }
-);
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
 export const authAPI = {
   register: (data: { name: string; email: string; password: string }) =>
-    api.post('/auth/register', data),
+    apiClient.post('/auth/register', data),
   login: (data: { email: string; password: string }) =>
-    api.post('/auth/login', data),
-  me: () => api.get('/auth/me'),
-  profile: () => api.get('/auth/profile'),
+    apiClient.post('/auth/login', data),
+  me: () => apiClient.get('/auth/me'),
+  profile: () => apiClient.get('/auth/profile'),
 };
 
-// ─── Home Dashboard ───────────────────────────────────────────────────────────
 export const homeAPI = {
-  getDashboard: () => api.get('/home'),
+  getDashboard: () => apiClient.get('/home'),
 };
 
-// ─── Weather ─────────────────────────────────────────────────────────────────
 export const weatherAPI = {
-  get: (city?: string) => api.get('/weather', { params: city ? { city } : undefined }),
+  get: (city?: string) => apiClient.get('/weather', { params: city ? { city } : undefined }),
 };
 
-// ─── Crops ───────────────────────────────────────────────────────────────────
 export const cropsAPI = {
-  getAll: () => api.get('/crops'),
-  getById: (id: string) => api.get(`/crops/${id}`),
-  create: (data: any) => api.post('/crops', data),
-  update: (id: string, data: any) => api.put(`/crops/${id}`, data),
-  delete: (id: string) => api.delete(`/crops/${id}`),
-  getTelemetry: () => api.get('/crops/telemetry'),
-  // Observations
-  addObservation: (cropId: string, data: { note: string; imageUrl?: string }) =>
-    api.post(`/crops/${cropId}/observations`, data),
-  getObservations: (cropId: string) => api.get(`/crops/${cropId}/observations`),
-  // Sensor history
-  getSensorHistory: (cropId: string) => api.get(`/crops/${cropId}/sensors`),
-  // Intelligence
-  getIntelligence: (cropId: string) => api.get(`/crops/${cropId}/intelligence`),
-  // AI Advice
-  getAiAdvice: (cropId: string, question?: string) =>
-    api.post(`/crops/${cropId}/ai-advice`, { question }),
+  getAll: () => apiClient.get('/crops'),
+  getById: (id: string | number) => apiClient.get(`/crops/${id}`),
+  create: (data: any) => apiClient.post('/crops', data),
+  update: (id: string | number, data: any) => apiClient.put(`/crops/${id}`, data),
+  delete: (id: string | number) => apiClient.delete(`/crops/${id}`),
+  getTelemetry: () => apiClient.get('/crops/telemetry'),
+  addObservation: (cropId: string | number, data: { note: string; imageUrl?: string }) =>
+    apiClient.post(`/crops/${cropId}/observations`, data),
+  getObservations: (cropId: string | number) => apiClient.get(`/crops/${cropId}/observations`),
+  getSensorHistory: (cropId: string | number) => apiClient.get(`/crops/${cropId}/sensors`),
+  getIntelligence: (cropId: string | number) => apiClient.get(`/crops/${cropId}/intelligence`),
+  getAiAdvice: (cropId: string | number, question?: string) =>
+    apiClient.post(`/crops/${cropId}/ai-advice`, { question }),
 };
 
-// ─── Tasks ───────────────────────────────────────────────────────────────────
 export const tasksAPI = {
   getAll: (params?: { status?: string; cropId?: string; from?: string; to?: string }) =>
-    api.get('/tasks', { params }),
-  getCalendar: (date: string) => api.get('/tasks/calendar', { params: { date } }),
-  getRecommendation: () => api.get('/tasks/recommendation'),
-  getById: (id: string) => api.get(`/tasks/${id}`),
-  create: (data: any) => api.post('/tasks', data),
-  update: (id: string, data: any) => api.put(`/tasks/${id}`, data),
-  complete: (id: string) => api.put(`/tasks/${id}`, { completed: true }),
-  delete: (id: string) => api.delete(`/tasks/${id}`),
+    apiClient.get('/tasks', { params }),
+  getCalendar: (date: string) => apiClient.get('/tasks/calendar', { params: { date } }),
+  getRecommendation: () => apiClient.get('/tasks/recommendation'),
+  getById: (id: string | number) => apiClient.get(`/tasks/${id}`),
+  create: (data: any) => apiClient.post('/tasks', data),
+  update: (id: string | number, data: any) => apiClient.put(`/tasks/${id}`, data),
+  complete: (id: string | number) => apiClient.put(`/tasks/${id}`, { completed: true, status: 'completed' }),
+  delete: (id: string | number) => apiClient.delete(`/tasks/${id}`),
 };
 
-// ─── Scan ─────────────────────────────────────────────────────────────────────
 export const scanAPI = {
-  scan: (imageUri: string, cropId?: string) => {
+  scan: (imageUri: string, cropId?: string | number) => {
     const form = new FormData();
     form.append('image', {
       uri: imageUri,
       type: 'image/jpeg',
       name: 'scan.jpg',
     } as any);
-    if (cropId) form.append('cropId', cropId);
-    return api.post('/scans', form, {
+    if (cropId) form.append('cropId', String(cropId));
+    return apiClient.post('/scans', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  getHistory: () => api.get('/scans'),
+  getHistory: () => apiClient.get('/scans'),
 };
 
-// ─── Agent ───────────────────────────────────────────────────────────────────
 export const agentAPI = {
   chat: (
     message: string,
@@ -114,13 +68,14 @@ export const agentAPI = {
     image?: string,
     mimeType?: string
   ) =>
-    api.post('/agent/chat', {
+    apiClient.post('/agent/chat', {
       message,
       history: history ?? [],
       ...(image ? { image, mimeType: mimeType || 'image/jpeg' } : {}),
     }),
-  getHistory: () => api.get('/agent/history'),
-  clearHistory: () => api.delete('/agent/history'),
+  getHistory: () => apiClient.get('/agent/history'),
+  clearHistory: () => apiClient.delete('/agent/history'),
 };
 
-export default api;
+export const api = apiClient;
+export default apiClient;

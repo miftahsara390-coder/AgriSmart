@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 const Crop = sequelize.define('Crop', {
   id: {
@@ -66,4 +66,5 @@ const Crop = sequelize.define('Crop', {
   tableName: 'crops',
 });
 
-module.exports = Crop;
+export { Crop };
+export default Crop;

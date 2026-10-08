@@ -2,15 +2,16 @@
   "name": "agrismart-backend",
   "version": "1.0.0",
   "description": "AgriSmart Backend API - Intelligent Farming Application",
+  "type": "module",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
     "dev:fresh": "node kill-port.js && node src/server.js",
     "start": "node src/server.js",
     "setup-db": "node setup-db.js",
-    "test": "jest --detectOpenHandles --forceExit",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --detectOpenHandles --forceExit",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
     "@google/genai": "^2.25.0",

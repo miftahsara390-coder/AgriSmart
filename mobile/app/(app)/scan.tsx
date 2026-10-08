@@ -4,7 +4,7 @@ import {
   Alert, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { scanAPI } from '../../src/services/api';
+import { useScanImageMutation } from '../../src/services/scan';
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
 import { useTranslation } from '../../src/stores/language.store';
@@ -12,8 +12,10 @@ import { useTranslation } from '../../src/stores/language.store';
 export default function ScanScreen() {
   const { t } = useTranslation();
   const [image, setImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+
+  const scanMutation = useScanImageMutation();
+  const loading = scanMutation.isPending;
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -52,14 +54,11 @@ export default function ScanScreen() {
 
   const handleScan = async () => {
     if (!image) return;
-    setLoading(true);
     try {
-      const res = await scanAPI.scan(image);
-      setResult(res.data);
+      const data = await scanMutation.mutateAsync({ imageUri: image });
+      setResult(data);
     } catch (err: any) {
       Alert.alert(t('scan.scanFailed'), err.response?.data?.error || t('common.error'));
-    } finally {
-      setLoading(false);
     }
   };
   return (

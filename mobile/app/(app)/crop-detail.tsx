@@ -13,7 +13,17 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { cropsAPI, tasksAPI } from '../../src/services/api';
+import {
+  useCropQuery,
+  useCropIntelligenceQuery,
+  useCropAiAdviceMutation,
+  useCropsQuery,
+} from '../../src/services/crops';
+import {
+  useCompleteTaskMutation,
+  useUpdateTaskMutation,
+  useCreateTaskMutation,
+} from '../../src/services/tasks';
 
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
@@ -48,64 +58,31 @@ export default function CropDetailScreen() {
   }>();
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [cropDataRaw, setCropDataRaw] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  
+  const { data: allCropsData } = useCropsQuery({ enabled: !params.id });
+  const activeCropId = params.id || (allCropsData?.crops?.[0]?.id ? String(allCropsData.crops[0].id) : undefined);
+
+  const { data: cropDetailData, isLoading: cropLoading } = useCropQuery(activeCropId);
+  const { data: intelData, isLoading: intelLoading } = useCropIntelligenceQuery(activeCropId);
+
+  const aiAdviceMutation = useCropAiAdviceMutation();
+  const completeTaskMutation = useCompleteTaskMutation();
+  const updateTaskMutation = useUpdateTaskMutation();
+  const createTaskMutation = useCreateTaskMutation();
+
+  const loading = cropLoading || intelLoading;
   const [taskDone, setTaskDone] = useState(false);
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [aiVisible, setAiVisible] = useState(false);
   const [aiResponse, setAiResponse] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
+
+  const nextTask = cropDetailData?.nextTask;
 
   useEffect(() => {
-    if (params.id) {
-      loadCropDetails(params.id);
-    } else {
-      loadInitialCrop();
+    if (nextTask) {
+      setTaskDone(!!nextTask.completed || nextTask.status === 'done');
     }
-  }, [params.id]);
-
-  const loadInitialCrop = async () => {
-    setLoading(true);
-    try {
-      const res = await cropsAPI.getAll();
-      const list = res.data?.crops;
-      if (Array.isArray(list) && list.length > 0) {
-        await loadCropDetails(list[0].id.toString());
-      }
-    } catch (err) {
-      console.error('Failed to load initial crop list', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadCropDetails = async (id: string) => {
-    setLoading(true);
-    try {
-      const [cropRes, intelRes] = await Promise.allSettled([
-        cropsAPI.getById(id),
-        cropsAPI.getIntelligence(id),
-      ]);
-
-      const data: any = {};
-      if (cropRes.status === 'fulfilled') {
-        data.crop = cropRes.value.data.crop || cropRes.value.data;
-        data.nextTask = cropRes.value.data.nextTask;
-        data.sensorHistory = cropRes.value.data.sensorHistory;
-        if (data.nextTask) {
-          setTaskDone(!!data.nextTask.completed || data.nextTask.status === 'done');
-        }
-      }
-      if (intelRes.status === 'fulfilled') {
-        data.intelligence = intelRes.value.data.intelligence;
-      }
-      setCropDataRaw(data);
-    } catch (err) {
-      console.error('Failed to load crop details from backend', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [nextTask]);
 
   const askAi = async () => {
     if (aiVisible) {
@@ -114,16 +91,15 @@ export default function CropDetailScreen() {
     }
     setAiVisible(true);
     if (!aiResponse) {
-      setAiLoading(true);
       try {
-        const targetId = cropDataRaw?.crop?.id || params.id;
+        const targetId = activeCropId;
         if (targetId) {
-          const res = await cropsAPI.getAiAdvice(
-            targetId.toString(),
-            `What is the best immediate agronomic advice for my ${cropName} crop at this ${cropStage} stage?`
-          );
-          if (res.data?.advice) {
-            setAiResponse(res.data.advice);
+          const res = await aiAdviceMutation.mutateAsync({
+            cropId: targetId,
+            question: `What is the best immediate agronomic advice for my ${cropName} crop at this ${cropStage} stage?`,
+          });
+          if (res?.advice) {
+            setAiResponse(res.advice);
             return;
           }
         }
@@ -134,8 +110,6 @@ export default function CropDetailScreen() {
         setAiResponse(
           `Agronomic Advisory: Keep soil moisture between 50-65% during ${cropStage.toLowerCase()}. Avoid overhead watering to mitigate fungus risk, and inspect lower leaves for early blight spots.`
         );
-      } finally {
-        setAiLoading(false);
       }
     }
   };
@@ -145,32 +119,29 @@ export default function CropDetailScreen() {
     setTaskDone(nextDoneState);
 
     try {
-      if (cropDataRaw?.nextTask?.id) {
+      if (nextTask?.id) {
         if (nextDoneState) {
-          await tasksAPI.complete(cropDataRaw.nextTask.id.toString());
+          await completeTaskMutation.mutateAsync(nextTask.id);
         } else {
-          await tasksAPI.update(cropDataRaw.nextTask.id.toString(), {
-            completed: false,
-            status: 'pending',
+          await updateTaskMutation.mutateAsync({
+            id: nextTask.id,
+            data: {
+              completed: false,
+              status: 'pending',
+            },
           });
         }
-      } else if (cropDataRaw?.crop?.id) {
-        const created = await tasksAPI.create({
+      } else if (c?.id) {
+        await createTaskMutation.mutateAsync({
           title: actionHeadline,
           type: actionType,
-          cropId: cropDataRaw.crop.id,
+          cropId: c.id,
           date: todayStr,
           time: '08:00 AM',
           completed: nextDoneState,
           status: nextDoneState ? 'done' : 'pending',
           description: actionReason,
         });
-        if (created.data?.task) {
-          setCropDataRaw((prev: any) => ({
-            ...prev,
-            nextTask: created.data.task,
-          }));
-        }
       }
     } catch (err) {
       console.error('Failed to toggle task in backend', err);
@@ -179,10 +150,9 @@ export default function CropDetailScreen() {
   };
 
   // ── Unified Crop Data from Backend ──────────────────────────────────────────
-  const c = cropDataRaw?.crop;
-  const intel = cropDataRaw?.intelligence;
-  const latestSensor = intel?.latestSensor || cropDataRaw?.sensorHistory?.[0];
-  const nextTask = cropDataRaw?.nextTask;
+  const c = cropDetailData?.crop;
+  const intel = intelData;
+  const latestSensor = intel?.latestSensor || cropDetailData?.sensorHistory?.[0];
 
   const cropName = c?.name || params.name || 'Tomato (San Marzano)';
   const cropVariety = c?.variety || (c?.type ? `${c.type} • Solanum lycopersicum` : 'Determinate • Solanum lycopersicum');
@@ -466,7 +436,7 @@ export default function CropDetailScreen() {
           {/* AI Expandable response */}
           {aiVisible && (
             <View style={styles.aiDetailsBox}>
-              {aiLoading ? (
+              {aiAdviceMutation.isPending ? (
                 <View style={styles.aiLoadingRow}>
                   <ActivityIndicator size="small" color="#4ade80" />
                   <Text style={styles.aiLoadingText}>Querying Agronomic AI Model...</Text>

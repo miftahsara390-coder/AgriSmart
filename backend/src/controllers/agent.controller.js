@@ -1,5 +1,5 @@
-const { runAgent } = require('../ai/agent');
-const Conversation = require('../models/Conversation');
+import { runAgent } from '../ai/agent.js';
+import Conversation from '../models/Conversation.js';
 
 // POST /api/agent/chat
 const chat = async (req, res, next) => {
@@ -65,4 +65,5 @@ const clearHistory = async (req, res, next) => {
   }
 };
 
-module.exports = { chat, getHistory, clearHistory };
+export { chat, getHistory, clearHistory };
+export default { chat, getHistory, clearHistory };

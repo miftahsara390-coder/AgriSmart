@@ -5,17 +5,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import { COLORS } from '../../src/constants/theme';
-import { weatherAPI } from '../../src/services/api';
+import { useWeatherQuery } from '../../src/services/weather';
 
 export default function WeatherScreen() {
-  const [weatherData, setWeatherData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    weatherAPI.get().then(res => {
-      setWeatherData(res.data.weather);
-    }).catch(console.error).finally(() => setLoading(false));
-  }, []);
+  const { data, isLoading: loading } = useWeatherQuery();
+  const weatherData = data?.weather;
 
   return (
     <View style={styles.root}>

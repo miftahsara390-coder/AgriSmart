@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  RefreshControl,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { cropsAPI } from '../../src/services/api';
+import { useCropsQuery } from '../../src/services/crops';
 import { useTranslation } from '../../src/stores/language.store';
 
 import { COLORS } from '../../src/constants/theme';
@@ -63,23 +64,15 @@ export default function CropsScreen() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
-  const [crops, setCrops] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    fetchCrops();
-  }, []);
+  const { data, isLoading: loading, isRefetching, refetch } = useCropsQuery();
+  const crops = data?.crops || [];
 
-  const fetchCrops = async () => {
-    try {
-      const res = await cropsAPI.getAll();
-      setCrops(res.data.crops || []);
-    } catch (error) {
-      console.error('Failed to fetch crops', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const filteredCrops = crops.filter(crop => {
     const matchesSearch = crop.name.toLowerCase().includes(search.toLowerCase());
@@ -92,7 +85,18 @@ export default function CropsScreen() {
       <StatusBar style="dark" />
       <Header title={t('crops.title')} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => refetch()}
+            colors={['#15803d']}
+            tintColor="#15803d"
+          />
+        }
+      >
         {/* Search */}
         <View style={styles.searchContainer}>
           <MaterialIcons name="search" size={20} color={COLORS.outline} style={styles.searchIcon} />

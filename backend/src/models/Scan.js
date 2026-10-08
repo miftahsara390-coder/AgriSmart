@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 const Scan = sequelize.define('Scan', {
   id: {
@@ -44,4 +44,5 @@ const Scan = sequelize.define('Scan', {
   tableName: 'scans',
 });
 
-module.exports = Scan;
+export { Scan };
+export default Scan;

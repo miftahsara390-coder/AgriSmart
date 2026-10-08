@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../src/stores/auth.store';
 import { ActivityIndicator, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../src/services/queryClient';
 import { initNotifications } from '../src/services/notifications.service';
 import { useNotificationStore } from '../src/stores/notification.store';
 import { useLanguageStore } from '../src/stores/language.store';
@@ -64,14 +66,14 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
         <Stack.Screen name="index" />
       </Stack>
-    </>
+    </QueryClientProvider>
   );
 }
 

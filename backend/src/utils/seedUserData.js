@@ -1,6 +1,6 @@
-const Crop = require('../models/Crop');
-const Task = require('../models/Task');
-const SensorData = require('../models/SensorData');
+import Crop from '../models/Crop.js';
+import Task from '../models/Task.js';
+import SensorData from '../models/SensorData.js';
 
 /**
  * Ensures realistic agricultural demo data exists for a user.
@@ -170,4 +170,5 @@ async function ensureUserFarmData(userId) {
   }
 }
 
-module.exports = { ensureUserFarmData };
+export { ensureUserFarmData };
+export default { ensureUserFarmData };

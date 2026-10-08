@@ -2,7 +2,7 @@
  * kill-port.js — Kills any process using port 5000 before starting.
  * Usage: node kill-port.js
  */
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 const PORT = process.env.PORT || 5000;
 

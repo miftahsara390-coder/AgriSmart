@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { COLORS } from '../../src/constants/theme';
-import { cropsAPI } from '../../src/services/api';
+import { useCreateCropMutation } from '../../src/services/crops';
 
 export default function AddCropScreen() {
   const insets = useSafeAreaInsets();
@@ -16,19 +16,20 @@ export default function AddCropScreen() {
   const [type, setType] = useState('');
   const [variety, setVariety] = useState('');
   const [plantingDate, setPlantingDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loading, setLoading] = useState(false);
+  
+  const createCropMutation = useCreateCropMutation();
+  const loading = createCropMutation.isPending;
 
   const handleSave = async () => {
     if (!name.trim() || !type.trim()) {
       Alert.alert('Required', 'Please enter crop name and type');
       return;
     }
-    setLoading(true);
     try {
-      await cropsAPI.create({
-        name,
-        type,
-        variety,
+      await createCropMutation.mutateAsync({
+        name: name.trim(),
+        type: type.trim(),
+        variety: variety.trim(),
         plantingDate,
         stage: 'Seed',
         status: 'Healthy',
@@ -37,8 +38,6 @@ export default function AddCropScreen() {
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to save crop');
-    } finally {
-      setLoading(false);
     }
   };
 

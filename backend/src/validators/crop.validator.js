@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const createCropSchema = z.object({
   name: z.string().min(1, 'Crop name is required').max(100),
@@ -17,4 +17,5 @@ const createCropSchema = z.object({
 
 const updateCropSchema = createCropSchema.partial();
 
-module.exports = { createCropSchema, updateCropSchema };
+export { createCropSchema, updateCropSchema };
+export default { createCropSchema, updateCropSchema };

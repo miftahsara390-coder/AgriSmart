@@ -1,6 +1,6 @@
-const fs = require('fs');
-const Scan = require('../models/Scan');
-const { generateWithDeepSeekFallback } = require('../ai/agent');
+import fs from 'fs';
+import Scan from '../models/Scan.js';
+import { generateWithDeepSeekFallback } from '../ai/agent.js';
 
 // POST /api/scans
 const scanPlant = async (req, res, next) => {
@@ -145,4 +145,5 @@ function mapConfidence(value) {
   return 'medium';
 }
 
-module.exports = { scanPlant, getScanHistory };
+export { scanPlant, getScanHistory };
+export default { scanPlant, getScanHistory };

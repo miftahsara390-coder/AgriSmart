@@ -1,8 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { getWeatherData } from '../controllers/weather.controller.js';
+import authMiddleware from '../middlewares/auth.middleware.js';
+
 const router = express.Router();
-const { getWeatherData } = require('../controllers/weather.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
 
 router.get('/', authMiddleware, getWeatherData);
 
-module.exports = router;
+export { router };
+export default router;

@@ -2,8 +2,9 @@
  * AgriSmart — DB Setup Script
  * Connects to PostgreSQL, creates agrismart_db if missing, then exits.
  */
-require('dotenv').config();
-const { Client } = require('pg');
+import 'dotenv/config';
+import pg from 'pg';
+const { Client } = pg;
 
 const config = {
   host:     process.env.DB_HOST     || 'localhost',

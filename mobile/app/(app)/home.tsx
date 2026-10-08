@@ -14,7 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { homeAPI, tasksAPI } from '../../src/services/api';
+import { useHomeDashboardQuery } from '../../src/services/home';
+import { useCompleteTaskMutation, useUpdateTaskMutation } from '../../src/services/tasks';
 import { useAuthStore } from '../../src/stores/auth.store';
 import { useTranslation } from '../../src/stores/language.store';
 
@@ -27,59 +28,38 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { t } = useTranslation();
-  const [data, setData] = useState<{
-    weather: any;
-    todayTasks: any[];
-    crops: any[];
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  // Automatically refresh tasks and dashboard every time the screen comes into focus
+  const { data, isLoading: loading, isRefetching, refetch } = useHomeDashboardQuery();
+  const completeTaskMutation = useCompleteTaskMutation();
+  const updateTaskMutation = useUpdateTaskMutation();
+
+  // Refresh dashboard whenever the screen regains focus
   useFocusEffect(
     useCallback(() => {
-      fetchDashboard();
-    }, [])
+      refetch();
+    }, [refetch])
   );
 
-  const fetchDashboard = async () => {
-    try {
-      const res = await homeAPI.getDashboard();
-      setData(res.data);
-    } catch (error) {
-      console.error('Failed to fetch dashboard', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchDashboard();
+    await refetch();
   };
 
   const toggleTask = async (id: string | number) => {
-    if (!data) return;
+    if (!data?.todayTasks) return;
     const task = data.todayTasks.find((t) => t.id === id);
     if (!task) return;
 
     try {
-      // Optimistic update
-      setData((prev: any) => ({
-        ...prev,
-        todayTasks: prev.todayTasks.map((t: any) =>
-          t.id === id ? { ...t, completed: !t.completed } : t
-        ),
-      }));
       if (!task.completed) {
-        await tasksAPI.complete(id.toString());
+        await completeTaskMutation.mutateAsync(id);
       } else {
-        await tasksAPI.update(id.toString(), { completed: false });
+        await updateTaskMutation.mutateAsync({
+          id,
+          data: { completed: false, status: 'pending' },
+        });
       }
     } catch (error) {
       console.error('Failed to toggle task', error);
-      fetchDashboard(); // revert on failure
     }
   };
 
@@ -101,7 +81,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isRefetching}
             onRefresh={onRefresh}
             colors={['#15803d']}
             tintColor="#15803d"

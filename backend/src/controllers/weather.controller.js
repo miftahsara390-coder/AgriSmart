@@ -1,4 +1,4 @@
-const { getWeather } = require('../services/weather.service');
+import { getWeather } from '../services/weather.service.js';
 
 // GET /api/weather?city=BeniMellal
 const getWeatherData = async (req, res, next) => {
@@ -11,4 +11,5 @@ const getWeatherData = async (req, res, next) => {
   }
 };
 
-module.exports = { getWeatherData };
+export { getWeatherData };
+export default { getWeatherData };

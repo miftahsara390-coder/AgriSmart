@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 const Task = sequelize.define('Task', {
   id: {
@@ -60,4 +60,5 @@ const Task = sequelize.define('Task', {
   tableName: 'tasks',
 });
 
-module.exports = Task;
+export { Task };
+export default Task;

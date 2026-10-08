@@ -1,7 +1,7 @@
-const { Op } = require('sequelize');
-const Task = require('../models/Task');
-const Crop = require('../models/Crop');
-const SensorData = require('../models/SensorData');
+import { Op } from 'sequelize';
+import Task from '../models/Task.js';
+import Crop from '../models/Crop.js';
+import SensorData from '../models/SensorData.js';
 
 // ─── GET /api/tasks ───────────────────────────────────────────────────────────
 const getTasks = async (req, res, next) => {
@@ -183,7 +183,17 @@ const deleteTask = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
+  getTasks,
+  getCalendarTasks,
+  getTaskRecommendation,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+};
+
+export default {
   getTasks,
   getCalendarTasks,
   getTaskRecommendation,

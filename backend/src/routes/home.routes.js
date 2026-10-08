@@ -1,8 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { getHomeDashboard } from '../controllers/home.controller.js';
+import authMiddleware from '../middlewares/auth.middleware.js';
+
 const router = express.Router();
-const { getHomeDashboard } = require('../controllers/home.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
 
 router.get('/', authMiddleware, getHomeDashboard);
 
-module.exports = router;
+export { router };
+export default router;

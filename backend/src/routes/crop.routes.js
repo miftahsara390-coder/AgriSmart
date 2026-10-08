@@ -1,13 +1,22 @@
-const express = require('express');
+import express from 'express';
+import {
+  getCrops,
+  getCropById,
+  createCrop,
+  updateCrop,
+  deleteCrop,
+  getTelemetry,
+  addObservation,
+  getObservations,
+  getSensorHistory,
+  getCropIntelligence,
+  getAiAdvice,
+} from '../controllers/crop.controller.js';
+import authMiddleware from '../middlewares/auth.middleware.js';
+import validate from '../middlewares/validate.middleware.js';
+import { createCropSchema, updateCropSchema } from '../validators/crop.validator.js';
+
 const router = express.Router();
-const {
-  getCrops, getCropById, createCrop, updateCrop, deleteCrop,
-  getTelemetry, addObservation, getObservations,
-  getSensorHistory, getCropIntelligence, getAiAdvice,
-} = require('../controllers/crop.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
-const validate = require('../middlewares/validate.middleware');
-const { createCropSchema, updateCropSchema } = require('../validators/crop.validator');
 
 router.use(authMiddleware);
 
@@ -34,4 +43,5 @@ router.get('/:id/intelligence', getCropIntelligence);
 // AI Advice
 router.post('/:id/ai-advice', getAiAdvice);
 
-module.exports = router;
+export { router };
+export default router;

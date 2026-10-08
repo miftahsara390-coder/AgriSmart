@@ -17,7 +17,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { tasksAPI, cropsAPI } from '../../src/services/api';
+import {
+  useCalendarTasksQuery,
+  useTaskRecommendationQuery,
+  useCompleteTaskMutation,
+  useUpdateTaskMutation,
+  useCreateTaskMutation,
+} from '../../src/services/tasks';
+import { useCropsQuery } from '../../src/services/crops';
 
 import { COLORS } from '../../src/constants/theme';
 import Header from '../../src/components/Header';
@@ -113,15 +120,15 @@ export default function CalendarScreen() {
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: calendarData, isLoading: loading, refetch: refetchTasks } = useCalendarTasksQuery(selectedDate);
+  const { data: recData } = useTaskRecommendationQuery();
+  const { data: cropsData } = useCropsQuery();
+
+  const completeTaskMutation = useCompleteTaskMutation();
+  const updateTaskMutation = useUpdateTaskMutation();
+  const createTaskMutation = useCreateTaskMutation();
 
   // Backend Smart Planning / AI Recommendation State
-  const [aiRec, setAiRec] = useState<{
-    recommendation: string;
-    details: string[];
-    suggestedTask?: { title: string; type: string; cropField: string; time: string };
-  } | null>(null);
   const [aiRecDismissed, setAiRecDismissed] = useState(false);
   const [aiRecExpanded, setAiRecExpanded] = useState(false);
 
@@ -133,7 +140,70 @@ export default function CalendarScreen() {
   const [taskTime, setTaskTime] = useState('08:00 AM');
   const [reminder, setReminder] = useState(true);
   const [savingTask, setSavingTask] = useState(false);
-  const [cropsList, setCropsList] = useState<string[]>(DEFAULT_CROPS);
+
+  const cropsList = useMemo(() => {
+    if (cropsData?.crops && cropsData.crops.length > 0) {
+      const names = cropsData.crops.map(
+        (c: any) => c.name + (c.location ? ` • ${c.location}` : '')
+      );
+      return Array.from(new Set([...names, ...DEFAULT_CROPS]));
+    }
+    return DEFAULT_CROPS;
+  }, [cropsData]);
+
+  const aiRec = useMemo(() => {
+    if (recData?.recommendation) {
+      return recData;
+    }
+    return {
+      recommendation: 'Based on your crops and current conditions, irrigation is recommended tomorrow morning.',
+      details: [
+        'Root zone moisture dropped to 38% in your primary parcel.',
+        'Projected peak temperature reaches 26°C with moderate evapotranspiration.',
+        'Recommended: 3.5 Liters/plant at 07:30 AM via drip lines.',
+      ],
+      suggestedTask: {
+        title: 'Drip Line Irrigation',
+        type: 'Irrigation',
+        cropField: 'Tomato Field 1',
+        time: '07:30 AM',
+      },
+    };
+  }, [recData]);
+
+  const normalizeTaskType = (raw: string): TaskType => {
+    const lower = (raw || '').toLowerCase();
+    if (lower.includes('water') || lower.includes('irrigat')) return 'Irrigation';
+    if (lower.includes('fertil') || lower.includes('nutri')) return 'Fertilization';
+    if (lower.includes('harvest') || lower.includes('pick')) return 'Harvest';
+    if (lower.includes('plant') || lower.includes('sow') || lower.includes('seed')) return 'Planting';
+    if (lower.includes('pest') || lower.includes('bug') || lower.includes('spray')) return 'Pest Check';
+    if (lower.includes('inspect') || lower.includes('check') || lower.includes('scout')) return 'Crop Inspection';
+    return 'Other';
+  };
+
+  const tasks: TaskItem[] = useMemo(() => {
+    const serverTasks = calendarData?.tasks;
+    if (Array.isArray(serverTasks)) {
+      return serverTasks.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        type: normalizeTaskType(t.type || t.title),
+        cropField: t.Crop?.name
+          ? `${t.Crop.name}${t.Crop.location ? ' • ' + t.Crop.location : ''}`
+          : t.cropField || 'Field A',
+        time:
+          t.time ||
+          (t.dueDate
+            ? new Date(t.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '08:00 AM'),
+        date: t.date || selectedDate,
+        completed: !!t.completed || t.status === 'done' || t.status === 'completed',
+        reminder: !!t.reminder,
+      }));
+    }
+    return [];
+  }, [calendarData, selectedDate]);
 
   // 12-day dynamic horizontal date strip around today
   const dateStrip = useMemo(() => {
@@ -153,118 +223,21 @@ export default function CalendarScreen() {
     return list;
   }, [todayStr, language]);
 
-  // Load backend tasks & backend recommendation on mount & when date changes
-  useEffect(() => {
-    fetchTasksFromBackend(selectedDate);
-  }, [selectedDate]);
-
-  useEffect(() => {
-    fetchBackendRecommendation();
-    fetchBackendCrops();
-  }, []);
-
-  const fetchBackendCrops = async () => {
-    try {
-      const res = await cropsAPI.getAll();
-      if (res.data?.crops && res.data.crops.length > 0) {
-        const names = res.data.crops.map(
-          (c: any) => c.name + (c.location ? ` • ${c.location}` : '')
-        );
-        setCropsList(Array.from(new Set([...names, ...DEFAULT_CROPS])));
-      }
-    } catch (e) {
-      // Keep defaults
-    }
-  };
-
-  const fetchBackendRecommendation = async () => {
-    try {
-      const res = await tasksAPI.getRecommendation();
-      if (res.data?.recommendation) {
-        setAiRec(res.data);
-      }
-    } catch (err) {
-      // Fallback recommendation if backend is unreachable
-      setAiRec({
-        recommendation: 'Based on your crops and current conditions, irrigation is recommended tomorrow morning.',
-        details: [
-          'Root zone moisture dropped to 38% in your primary parcel.',
-          'Projected peak temperature reaches 26°C with moderate evapotranspiration.',
-          'Recommended: 3.5 Liters/plant at 07:30 AM via drip lines.',
-        ],
-        suggestedTask: {
-          title: 'Drip Line Irrigation',
-          type: 'Irrigation',
-          cropField: 'Tomato Field 1',
-          time: '07:30 AM',
-        },
-      });
-    }
-  };
-
-  const fetchTasksFromBackend = async (date: string) => {
-    setLoading(true);
-    try {
-      const res = await tasksAPI.getCalendar(date);
-      const serverTasks = res.data?.tasks;
-      if (Array.isArray(serverTasks)) {
-        const mapped: TaskItem[] = serverTasks.map((t: any) => ({
-          id: t.id,
-          title: t.title,
-          type: normalizeTaskType(t.type || t.title),
-          cropField: t.Crop?.name
-            ? `${t.Crop.name}${t.Crop.location ? ' • ' + t.Crop.location : ''}`
-            : t.cropField || 'Field A',
-          time:
-            t.time ||
-            (t.dueDate
-              ? new Date(t.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : '08:00 AM'),
-          date: t.date || date,
-          completed: !!t.completed || t.status === 'done',
-          reminder: !!t.reminder,
-        }));
-        setTasks(mapped);
-      } else {
-        setTasks([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch calendar tasks from backend', err);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const normalizeTaskType = (raw: string): TaskType => {
-    const lower = (raw || '').toLowerCase();
-    if (lower.includes('water') || lower.includes('irrigat')) return 'Irrigation';
-    if (lower.includes('fertil') || lower.includes('nutri')) return 'Fertilization';
-    if (lower.includes('harvest') || lower.includes('pick')) return 'Harvest';
-    if (lower.includes('plant') || lower.includes('sow') || lower.includes('seed')) return 'Planting';
-    if (lower.includes('pest') || lower.includes('bug') || lower.includes('spray')) return 'Pest Check';
-    if (lower.includes('inspect') || lower.includes('check') || lower.includes('scout')) return 'Crop Inspection';
-    return 'Other';
-  };
-
   const handleToggleTask = async (id: string | number) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
-    const newCompleted = !task.completed;
-    // Optimistic UI update
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: newCompleted } : t)));
-
     try {
-      if (newCompleted) {
-        await tasksAPI.complete(id.toString());
+      if (!task.completed) {
+        await completeTaskMutation.mutateAsync(id);
       } else {
-        await tasksAPI.update(id.toString(), { completed: false, status: 'pending' });
+        await updateTaskMutation.mutateAsync({
+          id,
+          data: { completed: false, status: 'pending' },
+        });
       }
     } catch (err) {
       console.error('Failed to update task status in backend', err);
-      // Revert on error
-      fetchTasksFromBackend(selectedDate);
     }
   };
 
@@ -291,7 +264,7 @@ export default function CalendarScreen() {
 
     setSavingTask(true);
     try {
-      const res = await tasksAPI.create({
+      await createTaskMutation.mutateAsync({
         title: taskTitle.trim(),
         description: `Farm operation for ${cropField.trim()}`,
         type: taskType,
@@ -300,9 +273,6 @@ export default function CalendarScreen() {
         time: taskTime,
         priority: 'high',
       });
-
-      // Reload tasks from backend so everything matches backend database
-      await fetchTasksFromBackend(selectedDate);
       setModalVisible(false);
     } catch (err) {
       console.error('Failed to create task in backend', err);
@@ -317,7 +287,7 @@ export default function CalendarScreen() {
     if (!aiRec?.suggestedTask) return;
 
     try {
-      await tasksAPI.create({
+      await createTaskMutation.mutateAsync({
         title: aiRec.suggestedTask.title,
         description: 'Auto-scheduled from AgriSmart AI Advisory',
         type: aiRec.suggestedTask.type,
@@ -326,7 +296,6 @@ export default function CalendarScreen() {
         time: aiRec.suggestedTask.time,
         priority: 'high',
       });
-      await fetchTasksFromBackend(selectedDate);
       setAiRecDismissed(true);
       Alert.alert('Scheduled in Backend', 'Irrigation task saved to backend schedule.');
     } catch (err) {
@@ -403,7 +372,7 @@ export default function CalendarScreen() {
             {/* Expandable advisory details */}
             {aiRecExpanded && (
               <View style={styles.aiExpandedBox}>
-                {aiRec.details?.map((bullet, idx) => (
+                {aiRec.details?.map((bullet: string, idx: number) => (
                   <Text key={idx} style={styles.aiExpandedText}>
                     • {bullet}
                   </Text>

@@ -1,6 +1,6 @@
 // Unit tests for auth controller logic (no DB)
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 // Minimal environment setup
 process.env.JWT_SECRET = 'test-secret';

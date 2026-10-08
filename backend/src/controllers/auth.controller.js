@@ -1,6 +1,7 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import { ensureUserFarmData } from '../utils/seedUserData.js';
 
 const generateToken = (userId) => {
   return jwt.sign(
@@ -18,8 +19,6 @@ const safeUser = (user) => ({
   location: user.location,
   createdAt: user.createdAt,
 });
-
-const { ensureUserFarmData } = require('../utils/seedUserData');
 
 // POST /api/auth/register
 const register = async (req, res, next) => {
@@ -95,4 +94,5 @@ const getMe = async (req, res) => {
   res.json({ user: req.user });
 };
 
-module.exports = { register, login, getMe };
+export { register, login, getMe };
+export default { register, login, getMe };

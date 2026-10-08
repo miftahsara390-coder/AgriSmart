@@ -1,4 +1,5 @@
-const axios = require('axios');
+import axios from 'axios';
+import Crop from '../models/Crop.js';
 
 const SYSTEM_PROMPT = `You are AgriSmart AI, an expert agricultural assistant designed to help farmers, agronomists, and growers manage their crops, soil, irrigation, plant health, and farm operations.
 
@@ -119,7 +120,6 @@ const runAgent = async ({ userMessage, history = [], userId, image, mimeType }) 
     let farmContext = '';
     if (userId) {
       try {
-        const Crop = require('../models/Crop');
         const userCrops = await Crop.findAll({ where: { userId }, limit: 6 });
         if (userCrops && userCrops.length > 0) {
           farmContext = `\n\nFARM PROFILE CONTEXT (FOR PERSONALIZATION ONLY):
@@ -235,8 +235,13 @@ function buildFallbackResponse(userMessage = '', hasKey = false) {
   return `🌿 **AgriSmart AI Assistant**\n\nI am your agricultural AI assistant powered by DeepSeek.\n\nI can help you with any crop—including vegetables, fruit trees, grains, and specialty plants:\n• **Crop Diagnostics**: Identify symptoms or analyze attached plant photos\n• **Irrigation & Soil**: Smart watering schedules and soil moisture management\n• **Fertilization**: Nutrient recommendations by growth stage\n• **Pest & Disease Control**: Integrated pest management and treatments\n• **Harvest & Pruning**: Pruning methods, maturity checks, and yield optimization\n\n*Which crop or agricultural topic would you like advice on today?*${note}`;
 }
 
-module.exports = {
+export {
   runAgent,
   generateWithDeepSeekFallback,
-  generateWithGeminiFallback: generateWithDeepSeekFallback, // backwards compatibility
+  generateWithDeepSeekFallback as generateWithGeminiFallback,
+};
+export default {
+  runAgent,
+  generateWithDeepSeekFallback,
+  generateWithGeminiFallback: generateWithDeepSeekFallback,
 };

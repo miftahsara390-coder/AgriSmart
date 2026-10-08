@@ -1,18 +1,18 @@
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-
-const { connectDB } = require('./config/database');
+import { connectDB } from './config/database.js';
 
 // ─── Models (load all to register with Sequelize) ────────────────────────────
-const User = require('./models/User');
-const Crop = require('./models/Crop');
-const Task = require('./models/Task');
-const Scan = require('./models/Scan');
-const Observation = require('./models/Observation');
-const SensorData = require('./models/SensorData');
-const Conversation = require('./models/Conversation');
+import User from './models/User.js';
+import Crop from './models/Crop.js';
+import Task from './models/Task.js';
+import Scan from './models/Scan.js';
+import Observation from './models/Observation.js';
+import SensorData from './models/SensorData.js';
+import Conversation from './models/Conversation.js';
 
 // ─── Associations ────────────────────────────────────────────────────────────
 // User → Crop
@@ -52,14 +52,17 @@ User.hasMany(Conversation, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Conversation.belongsTo(User, { foreignKey: 'userId' });
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-const authRoutes = require('./routes/auth.routes');
-const homeRoutes = require('./routes/home.routes');
-const weatherRoutes = require('./routes/weather.routes');
-const cropRoutes = require('./routes/crop.routes');
-const taskRoutes = require('./routes/task.routes');
-const scanRoutes = require('./routes/scan.routes');
-const agentRoutes = require('./routes/agent.routes');
-const { errorHandler } = require('./middlewares/errorHandler');
+import authRoutes from './routes/auth.routes.js';
+import homeRoutes from './routes/home.routes.js';
+import weatherRoutes from './routes/weather.routes.js';
+import cropRoutes from './routes/crop.routes.js';
+import taskRoutes from './routes/task.routes.js';
+import scanRoutes from './routes/scan.routes.js';
+import agentRoutes from './routes/agent.routes.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -106,4 +109,5 @@ app.use(errorHandler);
 // Connect to DB
 connectDB();
 
-module.exports = app;
+export { app };
+export default app;

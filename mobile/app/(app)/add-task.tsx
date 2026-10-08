@@ -18,7 +18,8 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { COLORS } from '../../src/constants/theme';
-import { tasksAPI, cropsAPI } from '../../src/services/api';
+import { useCreateTaskMutation } from '../../src/services/tasks';
+import { useCropsQuery } from '../../src/services/crops';
 import { scheduleTaskReminder } from '../../src/services/notifications.service';
 
 const TASK_TYPES = [
@@ -70,20 +71,18 @@ export default function AddTaskScreen() {
   const [time, setTime] = useState(getUpcomingTimeStr());
   const [reminder, setReminder] = useState(true);
   const [selectedTimer, setSelectedTimer] = useState('10s');
-  const [loading, setLoading] = useState(false);
-  const [cropsList, setCropsList] = useState<string[]>(DEFAULT_CROPS);
 
-  useEffect(() => {
-    cropsAPI
-      .getAll()
-      .then((res) => {
-        if (res.data?.crops && res.data.crops.length > 0) {
-          const names = res.data.crops.map((c: any) => c.name + (c.location ? ` (${c.location})` : ''));
-          setCropsList(Array.from(new Set([...names, ...DEFAULT_CROPS])));
-        }
-      })
-      .catch(console.error);
-  }, []);
+  const { data: cropsData } = useCropsQuery();
+  const createTaskMutation = useCreateTaskMutation();
+  const loading = createTaskMutation.isPending;
+
+  const cropsList = React.useMemo(() => {
+    if (cropsData?.crops && cropsData.crops.length > 0) {
+      const names = cropsData.crops.map((c: any) => c.name + (c.location ? ` (${c.location})` : ''));
+      return Array.from(new Set([...names, ...DEFAULT_CROPS]));
+    }
+    return DEFAULT_CROPS;
+  }, [cropsData]);
 
   const handleSelectType = (typeId: string) => {
     setType(typeId);
@@ -98,9 +97,8 @@ export default function AddTaskScreen() {
       Alert.alert('Required', 'Please enter a task title');
       return;
     }
-    setLoading(true);
     try {
-      const res = await tasksAPI.create({
+      const res = await createTaskMutation.mutateAsync({
         title: title.trim(),
         description: `Farm task for ${cropField}`,
         type,
@@ -114,7 +112,7 @@ export default function AddTaskScreen() {
         const timerItem = TIMER_OPTIONS.find((t) => t.id === selectedTimer);
         const delay = timerItem && timerItem.seconds > 0 ? timerItem.seconds : undefined;
         await scheduleTaskReminder({
-          taskId: res.data?.task?.id,
+          taskId: res.task?.id,
           title: title.trim(),
           cropField,
           dueDate: date,
@@ -137,8 +135,6 @@ export default function AddTaskScreen() {
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to save task');
-    } finally {
-      setLoading(false);
     }
   };
 

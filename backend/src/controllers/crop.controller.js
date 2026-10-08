@@ -1,9 +1,9 @@
-const { Op } = require('sequelize');
-const Crop = require('../models/Crop');
-const Task = require('../models/Task');
-const Observation = require('../models/Observation');
-const SensorData = require('../models/SensorData');
-const { runAgent } = require('../ai/agent');
+import { Op } from 'sequelize';
+import Crop from '../models/Crop.js';
+import Task from '../models/Task.js';
+import Observation from '../models/Observation.js';
+import SensorData from '../models/SensorData.js';
+import { runAgent } from '../ai/agent.js';
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 const stageProgression = {
@@ -327,7 +327,21 @@ Notes: ${crop.notes || 'None'}
   }
 };
 
-module.exports = {
+export {
+  getCrops,
+  getCropById,
+  createCrop,
+  updateCrop,
+  deleteCrop,
+  getTelemetry,
+  addObservation,
+  getObservations,
+  getSensorHistory,
+  getCropIntelligence,
+  getAiAdvice,
+};
+
+export default {
   getCrops,
   getCropById,
   createCrop,
