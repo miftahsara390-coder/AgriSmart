@@ -3,10 +3,8 @@
  *
  * These tests use supertest against the Express app without connecting to a real DB.
  * The DB connection is mocked so tests run without PostgreSQL running.
- *
- * For full integration tests with a real DB, set NODE_ENV=test and configure
- * a test database in your .env.
  */
+import { jest } from '@jest/globals';
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
@@ -16,8 +14,7 @@ process.env.DB_USER = 'postgres';
 process.env.DB_PASSWORD = 'postgres';
 process.env.DB_HOST = 'localhost';
 
-// Mock Sequelize to avoid real DB connection in unit/integration test environment
-jest.mock('../../src/config/database', () => ({
+const mockDb = {
   sequelize: {
     define: jest.fn(() => ({})),
     authenticate: jest.fn().mockResolvedValue(true),
@@ -25,6 +22,12 @@ jest.mock('../../src/config/database', () => ({
     query: jest.fn(),
   },
   connectDB: jest.fn().mockResolvedValue(true),
+};
+
+// Mock Sequelize database config
+await jest.unstable_mockModule('../../src/config/database.js', () => ({
+  ...mockDb,
+  default: mockDb.sequelize,
 }));
 
 // Mock all models
@@ -36,73 +39,124 @@ const mockUser = {
   location: 'Beni Mellal',
 };
 
-jest.mock('../../src/models/User', () => ({
+const mockUserModel = {
   findOne: jest.fn(),
   findByPk: jest.fn(),
   create: jest.fn(),
   unscoped: jest.fn().mockReturnThis(),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/models/Crop', () => ({
+};
+
+const mockCropModel = {
   findAll: jest.fn().mockResolvedValue([]),
   findOne: jest.fn(),
   create: jest.fn().mockResolvedValue({ id: 'crop-1', name: 'Tomato' }),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/models/Task', () => ({
+};
+
+const mockTaskModel = {
   findAll: jest.fn().mockResolvedValue([]),
   findOne: jest.fn(),
   create: jest.fn().mockResolvedValue({ id: 'task-1', title: 'Task' }),
   count: jest.fn().mockResolvedValue(0),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/models/Scan', () => ({
+};
+
+const mockScanModel = {
   findAll: jest.fn().mockResolvedValue([]),
   create: jest.fn(),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/models/Observation', () => ({
+};
+
+const mockObservationModel = {
   findAll: jest.fn().mockResolvedValue([]),
   create: jest.fn(),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/models/SensorData', () => ({
+};
+
+const mockSensorDataModel = {
   findAll: jest.fn().mockResolvedValue([]),
   findOne: jest.fn().mockResolvedValue(null),
   create: jest.fn().mockResolvedValue({ id: 'sensor-1' }),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/models/Conversation', () => ({
+};
+
+const mockConversationModel = {
   findAll: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({ id: 'conv-1' }),
   hasMany: jest.fn(),
   belongsTo: jest.fn(),
-}));
-jest.mock('../../src/ai/agent', () => ({
+};
+
+const mockAgent = {
   runAgent: jest.fn().mockResolvedValue({
     content: 'Yellow leaves are usually caused by nitrogen deficiency or overwatering.',
     toolsUsed: [],
   }),
+  generateWithDeepSeekFallback: jest.fn(),
+  generateWithGeminiFallback: jest.fn(),
+};
+
+await jest.unstable_mockModule('../../src/models/User.js', () => ({
+  default: mockUserModel,
+  User: mockUserModel,
+  ...mockUserModel,
 }));
 
-const supertest = require('supertest');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+await jest.unstable_mockModule('../../src/models/Crop.js', () => ({
+  default: mockCropModel,
+  Crop: mockCropModel,
+  ...mockCropModel,
+}));
 
-// Lazy load app after mocks are set up
-let app;
-let request;
+await jest.unstable_mockModule('../../src/models/Task.js', () => ({
+  default: mockTaskModel,
+  Task: mockTaskModel,
+  ...mockTaskModel,
+}));
 
-beforeAll(() => {
-  app = require('../../src/app');
-  request = supertest(app);
-});
+await jest.unstable_mockModule('../../src/models/Scan.js', () => ({
+  default: mockScanModel,
+  Scan: mockScanModel,
+  ...mockScanModel,
+}));
+
+await jest.unstable_mockModule('../../src/models/Observation.js', () => ({
+  default: mockObservationModel,
+  Observation: mockObservationModel,
+  ...mockObservationModel,
+}));
+
+await jest.unstable_mockModule('../../src/models/SensorData.js', () => ({
+  default: mockSensorDataModel,
+  SensorData: mockSensorDataModel,
+  ...mockSensorDataModel,
+}));
+
+await jest.unstable_mockModule('../../src/models/Conversation.js', () => ({
+  default: mockConversationModel,
+  Conversation: mockConversationModel,
+  ...mockConversationModel,
+}));
+
+await jest.unstable_mockModule('../../src/ai/agent.js', () => ({
+  default: mockAgent,
+  ...mockAgent,
+}));
+
+const supertest = (await import('supertest')).default;
+const jwt = (await import('jsonwebtoken')).default;
+const bcrypt = (await import('bcrypt')).default;
+
+// Dynamic import of app after mocks are registered
+const { default: app } = await import('../../src/app.js');
+const request = supertest(app);
 
 // Helper: generate a valid JWT for tests
 const makeToken = (userId = 'user-uuid-1') =>
@@ -117,8 +171,7 @@ describe('POST /api/auth/register', () => {
   });
 
   test('returns 409 when email already exists', async () => {
-    const User = require('../../src/models/User');
-    User.findOne.mockResolvedValueOnce(mockUser);
+    mockUserModel.findOne.mockResolvedValueOnce(mockUser);
     const res = await request.post('/api/auth/register').send({
       name: 'Test', email: 'existing@agri.ma', password: 'password123',
     });
@@ -126,10 +179,9 @@ describe('POST /api/auth/register', () => {
   });
 
   test('registers successfully', async () => {
-    const User = require('../../src/models/User');
-    User.findOne.mockResolvedValueOnce(null);
+    mockUserModel.findOne.mockResolvedValueOnce(null);
     const hashedPw = await bcrypt.hash('password123', 10);
-    User.create.mockResolvedValueOnce({
+    mockUserModel.create.mockResolvedValueOnce({
       ...mockUser, password: hashedPw,
     });
     const res = await request.post('/api/auth/register').send({
@@ -149,8 +201,7 @@ describe('POST /api/auth/login', () => {
   });
 
   test('returns 401 for wrong credentials', async () => {
-    const User = require('../../src/models/User');
-    User.findOne.mockResolvedValueOnce(null);
+    mockUserModel.findOne.mockResolvedValueOnce(null);
     const res = await request.post('/api/auth/login').send({
       email: 'nobody@agri.ma', password: 'wrongpass',
     });
@@ -158,9 +209,8 @@ describe('POST /api/auth/login', () => {
   });
 
   test('logs in successfully', async () => {
-    const User = require('../../src/models/User');
     const hashedPw = await bcrypt.hash('password123', 10);
-    User.findOne.mockResolvedValueOnce({ ...mockUser, password: hashedPw });
+    mockUserModel.findOne.mockResolvedValueOnce({ ...mockUser, password: hashedPw });
     const res = await request.post('/api/auth/login').send({
       email: 'test@agri.ma', password: 'password123',
     });
@@ -178,8 +228,7 @@ describe('GET /api/auth/me', () => {
   });
 
   test('returns user with valid token', async () => {
-    const User = require('../../src/models/User');
-    User.findByPk.mockResolvedValueOnce(mockUser);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
     const token = makeToken();
     const res = await request.get('/api/auth/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
@@ -195,10 +244,8 @@ describe('GET /api/crops', () => {
   });
 
   test('returns crops array with valid token', async () => {
-    const User = require('../../src/models/User');
-    const Crop = require('../../src/models/Crop');
-    User.findByPk.mockResolvedValueOnce(mockUser);
-    Crop.findAll.mockResolvedValueOnce([]);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
+    mockCropModel.findAll.mockResolvedValueOnce([]);
     const token = makeToken();
     const res = await request.get('/api/crops').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
@@ -208,11 +255,9 @@ describe('GET /api/crops', () => {
 
 describe('POST /api/crops', () => {
   test('creates a crop', async () => {
-    const User = require('../../src/models/User');
-    const Crop = require('../../src/models/Crop');
-    User.findByPk.mockResolvedValueOnce(mockUser);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
     const newCrop = { id: 'crop-1', name: 'Tomatoes', userId: 'user-uuid-1' };
-    Crop.create.mockResolvedValueOnce(newCrop);
+    mockCropModel.create.mockResolvedValueOnce(newCrop);
     const token = makeToken();
     const res = await request
       .post('/api/crops')
@@ -226,11 +271,9 @@ describe('POST /api/crops', () => {
 // ─── Tasks Tests ──────────────────────────────────────────────────────────────
 describe('POST /api/tasks', () => {
   test('creates a task', async () => {
-    const User = require('../../src/models/User');
-    const Task = require('../../src/models/Task');
-    User.findByPk.mockResolvedValueOnce(mockUser);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
     const newTask = { id: 'task-1', title: 'Water tomatoes', userId: 'user-uuid-1', status: 'pending' };
-    Task.create.mockResolvedValueOnce(newTask);
+    mockTaskModel.create.mockResolvedValueOnce(newTask);
     const token = makeToken();
     const res = await request
       .post('/api/tasks')
@@ -243,9 +286,7 @@ describe('POST /api/tasks', () => {
 
 describe('PUT /api/tasks/:id (complete task)', () => {
   test('marks a task as completed', async () => {
-    const User = require('../../src/models/User');
-    const Task = require('../../src/models/Task');
-    User.findByPk.mockResolvedValueOnce(mockUser);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
     const task = {
       id: 'task-1', title: 'Water tomatoes', status: 'pending', userId: 'user-uuid-1',
       update: jest.fn().mockImplementation(function (data) {
@@ -253,7 +294,7 @@ describe('PUT /api/tasks/:id (complete task)', () => {
         return Promise.resolve(this);
       }),
     };
-    Task.findOne.mockResolvedValueOnce(task);
+    mockTaskModel.findOne.mockResolvedValueOnce(task);
     const token = makeToken();
     const res = await request
       .put('/api/tasks/task-1')
@@ -266,8 +307,7 @@ describe('PUT /api/tasks/:id (complete task)', () => {
 // ─── AI Agent Tests ───────────────────────────────────────────────────────────
 describe('POST /api/agent/chat', () => {
   test('returns 400 without message', async () => {
-    const User = require('../../src/models/User');
-    User.findByPk.mockResolvedValueOnce(mockUser);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
     const token = makeToken();
     const res = await request
       .post('/api/agent/chat')
@@ -277,8 +317,7 @@ describe('POST /api/agent/chat', () => {
   });
 
   test('returns a response for a valid message', async () => {
-    const User = require('../../src/models/User');
-    User.findByPk.mockResolvedValueOnce(mockUser);
+    mockUserModel.findByPk.mockResolvedValueOnce(mockUser);
     const token = makeToken();
     const res = await request
       .post('/api/agent/chat')

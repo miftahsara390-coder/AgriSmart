@@ -14,15 +14,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useHomeDashboardQuery } from '../../src/services/home';
-import { useCompleteTaskMutation, useUpdateTaskMutation } from '../../src/services/tasks';
-import { useAuthStore } from '../../src/stores/auth.store';
-import { useTranslation } from '../../src/stores/language.store';
+import { useHomeDashboardQuery } from '../../../src/services/home';
+import { useCompleteTaskMutation, useUpdateTaskMutation } from '../../../src/services/tasks';
+import { useAuthStore } from '../../../src/stores/auth.store';
+import { useTranslation } from '../../../src/stores/language.store';
 
-import { COLORS } from '../../src/constants/theme';
-import Header from '../../src/components/Header';
-import TaskCard, { Task } from '../../src/components/TaskCard';
-import CropCard, { Crop } from '../../src/components/CropCard';
+import { COLORS } from '../../../src/constants/theme';
+import Header from '../../../src/components/Header';
+import TaskCard, { Task } from '../../../src/components/TaskCard';
+import CropCard, { Crop } from '../../../src/components/CropCard';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();

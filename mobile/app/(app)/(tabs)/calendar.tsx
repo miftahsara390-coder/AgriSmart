@@ -23,12 +23,12 @@ import {
   useCompleteTaskMutation,
   useUpdateTaskMutation,
   useCreateTaskMutation,
-} from '../../src/services/tasks';
-import { useCropsQuery } from '../../src/services/crops';
+} from '../../../src/services/tasks';
+import { useCropsQuery } from '../../../src/services/crops';
 
-import { COLORS } from '../../src/constants/theme';
-import Header from '../../src/components/Header';
-import { useTranslation } from '../../src/stores/language.store';
+import { COLORS } from '../../../src/constants/theme';
+import Header from '../../../src/components/Header';
+import { useTranslation } from '../../../src/stores/language.store';
 
 export type TaskType =
   | 'Irrigation'

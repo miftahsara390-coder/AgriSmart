@@ -23,11 +23,11 @@ import {
   useAgentHistoryQuery,
   useSendAgentChatMutation,
   useClearAgentHistoryMutation,
-} from '../../src/services/agent';
+} from '../../../src/services/agent';
 
-import { COLORS } from '../../src/constants/theme';
-import Header from '../../src/components/Header';
-import { useTranslation } from '../../src/stores/language.store';
+import { COLORS } from '../../../src/constants/theme';
+import Header from '../../../src/components/Header';
+import { useTranslation } from '../../../src/stores/language.store';
 
 type Message = {
   id: string;

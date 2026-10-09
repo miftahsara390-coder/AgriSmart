@@ -4,10 +4,10 @@ import {
   Alert, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useScanImageMutation } from '../../src/services/scan';
-import { COLORS } from '../../src/constants/theme';
-import Header from '../../src/components/Header';
-import { useTranslation } from '../../src/stores/language.store';
+import { useScanImageMutation } from '../../../src/services/scan';
+import { COLORS } from '../../../src/constants/theme';
+import Header from '../../../src/components/Header';
+import { useTranslation } from '../../../src/stores/language.store';
 
 export default function ScanScreen() {
   const { t } = useTranslation();

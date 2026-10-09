@@ -14,12 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCropsQuery } from '../../src/services/crops';
-import { useTranslation } from '../../src/stores/language.store';
+import { useCropsQuery } from '../../../src/services/crops';
+import { useTranslation } from '../../../src/stores/language.store';
 
-import { COLORS } from '../../src/constants/theme';
-import Header from '../../src/components/Header';
-import CropCard from '../../src/components/CropCard';
+import { COLORS } from '../../../src/constants/theme';
+import Header from '../../../src/components/Header';
+import CropCard from '../../../src/components/CropCard';
 
 const INITIAL_CROPS = [
   {
