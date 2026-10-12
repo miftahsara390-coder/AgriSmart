@@ -50,9 +50,9 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.replace('/(app)/home');
+        router.replace('/home');
       } else {
-        router.replace('/(auth)/welcome');
+        router.replace('/welcome');
       }
     }
   }, [isLoading, isAuthenticated]);

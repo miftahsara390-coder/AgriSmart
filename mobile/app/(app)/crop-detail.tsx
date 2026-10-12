@@ -272,7 +272,7 @@ export default function CropDetailScreen() {
 
           <TouchableOpacity
             style={styles.cameraBtn}
-            onPress={() => router.push('/(app)/scan')}
+            onPress={() => router.push('/scan')}
             activeOpacity={0.8}
           >
             <MaterialIcons name="camera-alt" size={18} color="#141e18" />
@@ -467,7 +467,7 @@ export default function CropDetailScreen() {
 
             <TouchableOpacity
               style={styles.intelBtnSecondary}
-              onPress={() => router.push('/(app)/scan')}
+              onPress={() => router.push('/scan')}
               activeOpacity={0.85}
             >
               <MaterialIcons name="document-scanner" size={16} color="#4ade80" />
@@ -585,7 +585,7 @@ export default function CropDetailScreen() {
         <View style={styles.quickActionsRow}>
           <TouchableOpacity
             style={styles.quickActionBtn}
-            onPress={() => router.push('/(app)/crops')}
+            onPress={() => router.push('/crops')}
             activeOpacity={0.8}
           >
             <MaterialIcons name="grid-view" size={18} color="#1f5c3f" />

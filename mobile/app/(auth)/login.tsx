@@ -32,7 +32,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      router.replace('/(app)/home');
+      router.replace('/home');
     } catch (err: any) {
       const message = err.response?.data?.message || err.response?.data?.error || err.message || 'Something went wrong';
       Alert.alert('Login Failed', message);

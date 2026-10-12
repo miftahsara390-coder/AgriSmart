@@ -95,7 +95,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Weather Card */}
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/(app)/weather')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/weather')}>
           <LinearGradient
             colors={['#ffffff', '#ffffff', 'rgba(194,236,211,0.3)']}
             start={{ x: 0, y: 0 }}
@@ -134,7 +134,7 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity
             style={styles.addTaskBtn}
-            onPress={() => router.push('/(app)/add-task')}
+            onPress={() => router.push('/add-task')}
             activeOpacity={0.7}
           >
             <MaterialIcons name="add" size={16} color="#15803d" />
@@ -159,7 +159,7 @@ export default function HomeScreen() {
         {/* My Crops */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.myCrops')}</Text>
-          <TouchableOpacity onPress={() => router.push('/(app)/crops')}>
+          <TouchableOpacity onPress={() => router.push('/crops')}>
             <Text style={styles.viewAllText}>{t('home.viewAll')}</Text>
           </TouchableOpacity>
         </View>
@@ -175,7 +175,7 @@ export default function HomeScreen() {
         {/* AI Assistant */}
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={() => router.push('/(app)/assistant')}
+          onPress={() => router.push('/assistant')}
         >
           <LinearGradient
             colors={['#0d2a1c', '#16422f', '#113825']}
@@ -195,7 +195,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.aiBtnOuter}
               activeOpacity={0.8}
-              onPress={() => router.push('/(app)/assistant')}
+              onPress={() => router.push('/assistant')}
             >
               <LinearGradient
                 colors={['#22c55e', '#16a34a']}
