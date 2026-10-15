@@ -15,7 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useHomeDashboardQuery } from '../../../src/services/home';
-import { useCompleteTaskMutation, useUpdateTaskMutation } from '../../../src/services/tasks';
+import { useCompleteTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation } from '../../../src/services/tasks';
 import { useAuthStore } from '../../../src/stores/auth.store';
 import { useTranslation } from '../../../src/stores/language.store';
 
@@ -32,6 +32,7 @@ export default function HomeScreen() {
   const { data, isLoading: loading, isRefetching, refetch } = useHomeDashboardQuery();
   const completeTaskMutation = useCompleteTaskMutation();
   const updateTaskMutation = useUpdateTaskMutation();
+  const deleteTaskMutation = useDeleteTaskMutation();
 
   // Refresh dashboard whenever the screen regains focus
   useFocusEffect(
@@ -60,6 +61,14 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Failed to toggle task', error);
+    }
+  };
+
+  const removeTask = async (id: string | number) => {
+    try {
+      await deleteTaskMutation.mutateAsync(id);
+    } catch (error) {
+      console.error('Failed to delete task', error);
     }
   };
 
@@ -151,7 +160,19 @@ export default function HomeScreen() {
             </View>
           ) : (
             tasks.map((task: any) => (
-              <TaskCard key={task.id} task={task} onToggle={toggleTask} variant="home" />
+              <View key={task.id} style={styles.taskRow}>
+                <View style={styles.taskCardWrap}>
+                  <TaskCard task={task} onToggle={toggleTask} variant="home" />
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteBtn}
+                  onPress={() => removeTask(task.id)}
+                  activeOpacity={0.7}
+                  disabled={deleteTaskMutation.isPending}
+                >
+                  <MaterialIcons name="delete-outline" size={20} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
             ))
           )}
         </View>
@@ -400,6 +421,24 @@ const styles = StyleSheet.create({
   tasksContainer: {
     gap: 8,
     marginBottom: 24,
+  },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  taskCardWrap: {
+    flex: 1,
+  },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   aiCard: {
     borderRadius: 16,
